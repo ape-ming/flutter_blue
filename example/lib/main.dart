@@ -7,12 +7,24 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
 import 'package:flutter_blue_example/widgets.dart';
+import 'main_page.dart';
+import 'dart:developer';
+import 'rtu_configure.dart';
 
 void main() {
-  runApp(FlutterBlueApp());
+  //runApp(FlutterBlueApp());
+  runApp(MainApp());
 }
 
-class FlutterBlueApp extends StatelessWidget {
+class FlutterBlueApp extends StatefulWidget {
+
+  @override
+  _FlutterBlueAppState createState() => _FlutterBlueAppState();
+
+}
+
+class _FlutterBlueAppState extends State<FlutterBlueApp> {
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -29,6 +41,7 @@ class FlutterBlueApp extends StatelessWidget {
           }),
     );
   }
+
 }
 
 class BluetoothOffScreen extends StatelessWidget {
@@ -63,12 +76,92 @@ class BluetoothOffScreen extends StatelessWidget {
   }
 }
 
-class FindDevicesScreen extends StatelessWidget {
+class FindDevicesScreen extends StatefulWidget {
+
+  _FindDevicesScreen createState() => _FindDevicesScreen();
+}
+
+class _FindDevicesScreen extends State<FindDevicesScreen>{
+
+  bool isConnected = false;
+  BluetoothDevice connectedDevice;
+
+  void showDemoDialog<T>({ BuildContext context, Widget child }) {
+    showDialog<T>(
+      context: context,
+      builder: (BuildContext context) => child,
+    );
+  }
+
+  void onData(BluetoothState state) {
+    print('onData');
+  }
+
+  void onError() {
+    print('onError');
+  }
+
+  void onDone() {
+    print('onDone');
+  }
+
+
+  void deviceConnectedData(BluetoothDeviceState state) {
+    if(state == BluetoothDeviceState.connected) {
+      if(isConnected == false) {
+        isConnected = true;
+        print('------------BluetoothDeviceState.connected');
+
+        connectedDevice.discoverServices();
+        //connectedDevice.services.listen(deviceServicesData);
+
+        Navigator.push(
+            context,
+            new MaterialPageRoute(builder: (context) => RtuConfigurePage(device: connectedDevice,))
+        );
+      }
+    }
+    else if(state == BluetoothDeviceState.disconnected) {
+      if(isConnected == true){
+        isConnected = false;
+        print('------------BluetoothDeviceState.disconnected');
+      }
+    }
+  }
+
+  void scanResultData(List<ScanResult> result){
+    result.forEach((r){
+      r.device.state.listen(deviceConnectedData, onDone: onDone);
+    });
+  }
+
+  void onOpenDevice(BluetoothDevice device){
+    connectedDevice = device;
+    device.state.listen(deviceConnectedData, onDone: onDone);
+    device.connect();
+  }
+
+  void scanResultDone() {
+    print('++++++++++++scanResultDone');
+  }
+
+  @override
+  void initState(){
+    super.initState();
+    FlutterBlue flutterBlue = FlutterBlue.instance;
+
+    flutterBlue.state.listen(onData, onDone: onDone);
+    //flutterBlue.scanResults.listen(scanResultData, onDone: scanResultDone);
+
+    //Stream.periodic(Duration(seconds: 2))
+    //    .asyncMap((_) => FlutterBlue.instance.connectedDevices).listen(onData);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Find Devices'),
+        title: Text('查找设备'),
       ),
       body: RefreshIndicator(
         onRefresh: () =>
@@ -76,54 +169,69 @@ class FindDevicesScreen extends StatelessWidget {
         child: SingleChildScrollView(
           child: Column(
             children: <Widget>[
+              /*
               StreamBuilder<List<BluetoothDevice>>(
                 stream: Stream.periodic(Duration(seconds: 2))
                     .asyncMap((_) => FlutterBlue.instance.connectedDevices),
                 initialData: [],
                 builder: (c, snapshot) => Column(
-                      children: snapshot.data
-                          .map((d) => ListTile(
-                                title: Text(d.name),
-                                subtitle: Text(d.id.toString()),
-                                trailing: StreamBuilder<BluetoothDeviceState>(
-                                  stream: d.state,
-                                  initialData:
-                                      BluetoothDeviceState.disconnected,
-                                  builder: (c, snapshot) {
-                                    if (snapshot.data ==
-                                        BluetoothDeviceState.connected) {
-                                      return RaisedButton(
-                                        child: Text('OPEN'),
-                                        onPressed: () => Navigator.of(context)
-                                            .push(MaterialPageRoute(
-                                                builder: (context) =>
-                                                    DeviceScreen(device: d))),
-                                      );
-                                    }
-                                    return Text(snapshot.data.toString());
-                                  },
-                                ),
-                              ))
-                          .toList(),
+                  children: snapshot.data
+                      .map((d) => ListTile(
+                    title: Text(d.name),
+                    subtitle: Text(d.id.toString()),
+                    trailing: StreamBuilder<BluetoothDeviceState>(
+                      stream: d.state,
+                      initialData:
+                      BluetoothDeviceState.disconnected,
+                      builder: (c, snapshot) {
+                        if (snapshot.data ==
+                            BluetoothDeviceState.connected) {
+                          return RaisedButton(
+                            child: Text('打开'),
+                            onPressed: () {
+                              connectedDevice = d;
+                              return Navigator.of(context)
+                                  .push(MaterialPageRoute(
+                                  builder: (context) =>
+                                      DeviceScreen(device: d)));
+                            }
+                          );
+                        }
+                        return Text(snapshot.data.toString());
+                      },
                     ),
+                  ))
+                      .toList(),
+                ),
               ),
+              */
               StreamBuilder<List<ScanResult>>(
                 stream: FlutterBlue.instance.scanResults,
                 initialData: [],
-                builder: (c, snapshot) => Column(
-                      children: snapshot.data
-                          .map(
-                            (r) => ScanResultTile(
-                                  result: r,
-                                  onTap: () => Navigator.of(context).push(
-                                          MaterialPageRoute(builder: (context) {
-                                        r.device.connect();
-                                        return DeviceScreen(device: r.device);
-                                      })),
-                                ),
-                          )
-                          .toList(),
-                    ),
+                builder: (c, snapshot) {
+                  return Column(
+                    children: snapshot.data
+                        .map(
+                          (r) => ScanResultTile(
+                        result: r,
+                        onTap: (){onOpenDevice(r.device);},
+                        /*
+                            () {
+                          connectedDevice = r.device;
+                          r.device.connect();
+                          //return Navigator.of(context).push(
+                          //    MaterialPageRoute(builder: (context) {
+                          //      r.device.connect();
+                          //      connectedDevice = r.device;
+                          //      return DeviceScreen(device: r.device);
+                          //    }));
+                        }
+                        */
+                      ),
+                    )
+                        .toList(),
+                  );
+                }
               ),
             ],
           ),

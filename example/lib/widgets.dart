@@ -91,7 +91,7 @@ class ScanResultTile extends StatelessWidget {
       title: _buildTitle(context),
       leading: Text(result.rssi.toString()),
       trailing: RaisedButton(
-        child: Text('CONNECT'),
+        child: Text('连接'),
         color: Colors.black,
         textColor: Colors.white,
         onPressed: (result.advertisementData.connectable) ? onTap : null,
