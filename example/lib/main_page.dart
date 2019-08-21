@@ -1,11 +1,34 @@
 
-import 'package:flutter/cupertino.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_blue_example/monitor_data.dart';
+import 'package:flutter/material.dart' as prefix0;
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'main.dart';
-import 'rtu_configure.dart';
-import 'dart:developer' as developer;
-import 'monitor_data.dart';
+import 'http_helper.dart';
+import 'package:dio/dio.dart';
+import 'entity.dart';
+import 'dart:convert';
+
+import 'rtu_ble_protocol.dart';
+
+class DioData{
+  static _filtration(Response response,callBack(t)){
+    if(response.statusCode==200){
+      callBack(response.data);
+    }else {
+      callBack(null);
+    }
+  }
+  static monitorData(int id, callBack(t)) async{
+    var response = await HttpHelper().request("Tools/DataHandler.ashx?action=getjsonvalue&SearName=rtu_id&SearValue=$id");
+    if(response != null){
+      List<Entity> list = getEntityList(json.decode(response.data));
+      callBack(list);
+    }
+  }
+}
 
 class MainApp extends StatefulWidget{
 
@@ -13,12 +36,109 @@ class MainApp extends StatefulWidget{
 }
 
 class _MainAppState extends State<MainApp>{
+  final SystemUiOverlayStyle _style =
+  SystemUiOverlayStyle(statusBarColor: Colors.transparent);
 
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setSystemUIOverlayStyle(_style);
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'RTU调试',
       home: new HomePage(),
+    );
+  }
+}
+
+class AddDevice extends StatefulWidget{
+  final List<int> deviceList;
+  final Function onRemove;
+  AddDevice(this.deviceList, {this.onRemove});
+
+  _AddDeviceState createState() => _AddDeviceState();
+}
+
+class _AddDeviceState extends State<AddDevice>{
+  int address;
+  List<int> deviceList;
+
+  Widget devices(int id, VoidCallback onMove){
+    return ListTile(
+      title: Text(id.toString()),
+      leading: Icon(Icons.devices, color: Colors.blue,),
+      trailing: IconButton(
+        icon: Icon(Icons.clear, color: Colors.grey,),
+        onPressed: onMove,
+      ),
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    deviceList = widget.deviceList;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('添加站地址'),
+      content: SingleChildScrollView(
+        //padding: EdgeInsets.all(10.0),
+        child: Column(
+          children: <Widget>[
+            TextField(
+              //controller: TextEditingController(text: param.start_addr.toString()),
+                keyboardType: TextInputType.number,
+                maxLength: 8,
+                inputFormatters: [
+                  WhitelistingTextInputFormatter.digitsOnly,
+                ],
+                decoration: InputDecoration(
+                  hintText: '输入站地址',
+                  labelText: '站地址',
+                ),
+                onChanged: (str){
+                  address = int.parse(str);
+                }
+            ),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: OutlineButton.icon(
+                    icon: const Icon(Icons.add, size: 18.0),
+                    label: const Text('添加'),
+                    onPressed: () {
+                      if(address > 0){
+                        //widget.onAdd(address);
+                        setState(() {
+                          if(!deviceList.contains(address)){
+                            deviceList.add(address);
+                          }
+                        });
+                      }
+                    },
+                  ),
+                )
+              ],
+            ),
+            //Text('已添加站地址'),
+            SizedBox(
+              height: 200,
+              child: ListView(
+                children: deviceList.map((d){
+                  return devices(d, (){
+                    setState(() {
+                      deviceList.remove(d);
+                      widget.onRemove(d);
+                    });
+                  });
+                }).toList(),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -29,20 +149,58 @@ class HomePage extends StatefulWidget{
 }
 
 class _HomePageState extends State<HomePage>{
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
+
   static const int _addDevice = 1;
   static const int _rtuDebug  = 2;
   static const int _ttDebug   = 3;
-  List<MonitorData> monitor_data_list = new List<MonitorData>();
+  List<int> monitorId = new List<int>();
+  List<Entity> _entityList;
+  List<Entity> monitorDataList = new List<Entity>();
 
   @override
   void initState() {
     super.initState();
-    MonitorData data = new MonitorData();
-    monitor_data_list.add(data);
+  }
+
+  void showDemoDialog<T>({ BuildContext context, Widget child }) {
+    showDialog<T>(
+      context: context,
+      builder: (BuildContext context) => child,
+    )
+        .then<void>((T value) {
+      if (value != null) {
+        //showInSnackBar(command);
+        //writeCharacter.write(utf8.encode(command));
+      }
+    });
   }
 
   void showMenuSelection(int value) {
-    if(value == _rtuDebug){
+    Entity e;
+
+    if(value == _addDevice){
+      showDemoDialog(
+          context: context,
+          child: AddDevice(monitorId,
+            onRemove: (device){
+              setState(() {
+                if(monitorDataList.isNotEmpty){
+                  monitorDataList.forEach((m){
+                    if(int.parse(m.rtuId) == device){
+                      e = m;
+                    }
+                  });
+                  if(e != null){
+                    monitorDataList.remove(e);
+                  }
+                }
+              });
+            },
+          ));
+    }
+    else if(value == _rtuDebug){
       Navigator.push(
           context,
           new MaterialPageRoute(builder: (context) => FindDevicesScreen())
@@ -56,7 +214,55 @@ class _HomePageState extends State<HomePage>{
     }
   }
 
-  void onMonitorListRemove(MonitorData d){
+  void _onMonitorListUpdate(Entity data){
+    bool exist = false;
+    int index;
+
+    if(monitorDataList.isEmpty){
+      monitorDataList.add(data);
+    }
+    else{
+      monitorDataList.forEach((m){
+        if(int.parse(m.rtuId) == int.parse(data.rtuId)){
+          exist = true;
+          index = monitorDataList.indexOf(m);
+        }
+      });
+
+      if(exist == false){
+        monitorDataList.add(data);
+      }
+      else{
+        monitorDataList[index] = data;
+      }
+    }
+  }
+
+  void _getData(int id) async {
+    await DioData.monitorData(id, (t) {
+      _entityList = t;
+      //print(_entityList[_entityList.length - 1].id.toString());
+    });
+
+    //刷新界面
+    setState(() {
+      if(_entityList.isNotEmpty && (_entityList.length > 0 )){
+        _onMonitorListUpdate(_entityList[_entityList.length - 1]);
+      }
+    });
+  }
+
+  Future<void> _handleRefresh() async{
+    await Future.delayed(Duration(seconds: 1), () {
+      if(monitorId.isNotEmpty && monitorId.length > 0){
+        monitorId.forEach((m){
+          _getData(m);
+        });
+      }
+    });
+  }
+
+  void onMonitorListRemove(Entity d){
     showDialog<int>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
@@ -78,7 +284,7 @@ class _HomePageState extends State<HomePage>{
     ).then<void>((int value) { // The value passed to Navigator.pop() or null.
       if(value == 1){
         setState(() {
-          monitor_data_list.remove(d);
+          monitorDataList.remove(d);
         });
       }
     });
@@ -87,52 +293,82 @@ class _HomePageState extends State<HomePage>{
   @override
   Widget build(BuildContext context) {
     Widget body;
-    if(monitor_data_list.isEmpty){
+    if(monitorDataList.isEmpty){
       body = Center(
         child: Text('没有添加任何设备'),
       );
     }
     else{
       body = ListView(
-        children: monitor_data_list.map((d){
+        //physics: BouncingScrollPhysics(),
+        physics: AlwaysScrollableScrollPhysics(),
+        children: monitorDataList.map((d){
           return RtuDeviceCard(d,
-            onDelete: (){onMonitorListRemove(d);},
+            onDelete: (){
+            //onMonitorListRemove(d);
+            },
           );
         }).toList(),
       );
     }
 
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
         title: Text('RTU调试'),
+        centerTitle: true,
         actions: <Widget>[
           PopupMenuButton<int>(
-            icon: Icon(Icons.settings),
+            icon: Icon(Icons.add),
             onSelected: showMenuSelection,
             itemBuilder: (BuildContext context) => <PopupMenuItem<int>>[
               const PopupMenuItem<int>(
-                value: _rtuDebug,
-                child: Text('RTU配置'),
+                value: _addDevice,
+                child: ListTile(
+                  leading: Icon(Icons.add_to_queue),
+                  title: Text('添加设备'),
+                ),
               ),
               const PopupMenuItem<int>(
-                value: _ttDebug,
-                child: Text('设备透传调试'),
+                value: _rtuDebug,
+                child: ListTile(
+                  leading: Icon(Icons.settings),
+                  title: Text('RTU配置'),
+                ),
               ),
             ],
           ),
         ],
 
       ),
+
+      /*
+      PreferredSize(
+          child: Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: BoxDecoration(
+                gradient: LinearGradient(colors: [Colors.yellow, Colors.pink])),
+            child: SafeArea(child: Text("1212")),
+          ),
+          preferredSize: Size(double.infinity, 60)
+      ),
+      */
+
       floatingActionButton: FloatingActionButton(
-          child: Icon(Icons.add),
+          child: Icon(Icons.refresh),
           onPressed: (){
-            MonitorData data;
-            setState(() {
-              monitor_data_list.add(data);
-            });
+            _refreshIndicatorKey.currentState.show();
           },
       ),
-      body: body,
+      body: RefreshIndicator(
+        key: _refreshIndicatorKey,
+        onRefresh: _handleRefresh,
+        child: Padding(
+          padding: EdgeInsets.only(top: 10.0, bottom: 20.0),
+          child: body,
+        )
+      ),
       /*
       drawer: Drawer(
         child: Column(
@@ -161,7 +397,7 @@ class _HomePageState extends State<HomePage>{
 }
 
 class RtuDeviceCard extends StatefulWidget{
-  final MonitorData data;
+  final Entity data;
   final VoidCallback onDelete;
   RtuDeviceCard(this.data, {this.onDelete});
   _RtuDeviceCardState createState() => _RtuDeviceCardState();
@@ -200,6 +436,37 @@ class _RtuDeviceCardState extends State<RtuDeviceCard>{
     );
   }
 
+  List<Widget> deviceItemsList(Entity data){
+    List<Widget> list = new List<Widget>();
+
+    if(data.flowVelocity >= 0){
+      list.add(deviceItem(Icons.ac_unit, '流速', data.flowVelocity.toString(), 'm/s'));
+    }
+    if(data.airHeight >= 0){
+      list.add(deviceItem(Icons.map, '空高', data.airHeight.toString(), 'm'));
+    }
+    if(data.waterLevel >= 0){
+      list.add(deviceItem(Icons.add_alarm, '水位', data.waterLevel.toString(), 'm'));
+    }
+    if(data.flowVelSigIntens >= 0){
+      list.add(deviceItem(Icons.add_alarm, '流速信号强度', data.flowVelSigIntens.toString(), ' '));
+    }
+    if(data.watLevSigIntens >= 0){
+      list.add(deviceItem(Icons.add_alarm, '水位信号强度', data.watLevSigIntens.toString(), ' '));
+    }
+    if(data.flowRateInstant >= 0){
+      list.add(deviceItem(Icons.add_alarm, '瞬时流量', data.flowRateInstant.toString(), 'm³/s'));
+    }
+    if(data.flowRateTotal >= 0){
+      list.add(deviceItem(Icons.add_alarm, '累计流量', data.flowRateTotal.toString(), 'm³'));
+    }
+    if(data.powerVol >= 0){
+      list.add(deviceItem(Icons.add_alarm, '供电电压', data.powerVol.toString(), 'V'));
+    }
+
+    return list;
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -217,13 +484,13 @@ class _RtuDeviceCardState extends State<RtuDeviceCard>{
                     child: Icon(Icons.devices, color: Colors.blue,),
                   ),
                   Expanded(
-                    child: Text('6001',
+                    child: Text(int.parse(widget.data.monitPonitId).toString(),
                       style: Theme.of(context).textTheme.subhead.copyWith(color: Colors.black),
                     ),
                   ),
                   GestureDetector(
                     onTap: widget.onDelete,
-                    child: Icon(Icons.clear, color: Colors.grey,),
+                    child: Icon(Icons.keyboard_arrow_right, color: Colors.grey,),
                   ),
                 ],
               ),
@@ -233,10 +500,9 @@ class _RtuDeviceCardState extends State<RtuDeviceCard>{
               padding: EdgeInsets.only(bottom: 10.0),
               child: Column(
                 children: <Widget>[
-                  deviceItem(Icons.ac_unit, '流速', '1.234', 'm/s'),
-                  deviceItem(Icons.map, '空高', '11.234', 'm'),
-                  deviceItem(Icons.add_alarm, '水位', '3.256', 'm'),
-                  deviceItem(Icons.add_alarm, '信号强度', '5565', ' '),
+                  Column(
+                    children: deviceItemsList(widget.data),
+                  ),
                   Padding(
                     padding: EdgeInsets.only(top: 5, bottom: 3, left: 20.0),
                     child: Row(
@@ -245,7 +511,7 @@ class _RtuDeviceCardState extends State<RtuDeviceCard>{
                         Text(' 更新时间:  ',
                           style: Theme.of(context).textTheme.caption.copyWith(color: Colors.grey),
                         ),
-                        Text('2019-5-10 12:24:36',
+                        Text(widget.data.collectTime.replaceAll(new RegExp(r'T'), ' '),
                           style: Theme.of(context).textTheme.caption.copyWith(color: Colors.grey),
                         ),
                       ],
