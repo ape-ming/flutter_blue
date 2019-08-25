@@ -5,13 +5,16 @@ import 'package:flutter/material.dart' as prefix0;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'data_table_page.dart';
 import 'main.dart';
 import 'http_helper.dart';
 import 'package:dio/dio.dart';
 import 'entity.dart';
 import 'dart:convert';
 
+import 'monitor_data.dart';
 import 'rtu_ble_protocol.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 class DioData{
   static _filtration(Response response,callBack(t)){
@@ -22,8 +25,10 @@ class DioData{
     }
   }
   static monitorData(int id, callBack(t)) async{
+    print('request:' + id.toString());
     var response = await HttpHelper().request("Tools/DataHandler.ashx?action=getjsonvalue&SearName=rtu_id&SearValue=$id");
     if(response != null){
+      print(response.data);
       List<Entity> list = getEntityList(json.decode(response.data));
       callBack(list);
     }
@@ -43,9 +48,21 @@ class _MainAppState extends State<MainApp>{
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(_style);
     return MaterialApp(
+
       debugShowCheckedModeBanner: false,
       title: 'RTU调试',
       home: new HomePage(),
+      localizationsDelegates: [
+        //此处
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
+      supportedLocales: [
+        //此处
+        const Locale('zh', 'CH'),
+        const Locale('en', 'US'),
+      ],
+      locale: Locale('zh'),
     );
   }
 }
@@ -83,60 +100,66 @@ class _AddDeviceState extends State<AddDevice>{
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text('添加站地址'),
-      content: SingleChildScrollView(
-        //padding: EdgeInsets.all(10.0),
-        child: Column(
-          children: <Widget>[
-            TextField(
-              //controller: TextEditingController(text: param.start_addr.toString()),
-                keyboardType: TextInputType.number,
-                maxLength: 8,
-                inputFormatters: [
-                  WhitelistingTextInputFormatter.digitsOnly,
-                ],
-                decoration: InputDecoration(
-                  hintText: '输入站地址',
-                  labelText: '站地址',
-                ),
-                onChanged: (str){
-                  address = int.parse(str);
-                }
-            ),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: OutlineButton.icon(
-                    icon: const Icon(Icons.add, size: 18.0),
-                    label: const Text('添加'),
-                    onPressed: () {
-                      if(address > 0){
-                        //widget.onAdd(address);
-                        setState(() {
-                          if(!deviceList.contains(address)){
-                            deviceList.add(address);
-                          }
-                        });
-                      }
-                    },
+      content: Container(
+        width: 200,
+        height: 300,
+        child: SingleChildScrollView(
+          //padding: EdgeInsets.all(10.0),
+          child: Column(
+            children: <Widget>[
+              TextField(
+                //controller: TextEditingController(text: param.start_addr.toString()),
+                  keyboardType: TextInputType.number,
+                  maxLength: 8,
+                  inputFormatters: [
+                    WhitelistingTextInputFormatter.digitsOnly,
+                  ],
+                  decoration: InputDecoration(
+                    hintText: '输入站地址',
+                    labelText: '站地址',
                   ),
-                )
-              ],
-            ),
-            //Text('已添加站地址'),
-            SizedBox(
-              height: 200,
-              child: ListView(
-                children: deviceList.map((d){
-                  return devices(d, (){
-                    setState(() {
-                      deviceList.remove(d);
-                      widget.onRemove(d);
-                    });
-                  });
-                }).toList(),
+                  onChanged: (str){
+                    address = int.parse(str);
+                  }
               ),
-            ),
-          ],
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: OutlineButton.icon(
+                      icon: const Icon(Icons.add, size: 18.0),
+                      label: const Text('添加'),
+                      onPressed: () {
+                        if(address > 0){
+                          //widget.onAdd(address);
+                          setState(() {
+                            if(!deviceList.contains(address)){
+                              deviceList.add(address);
+                            }
+                          });
+                        }
+                      },
+                    ),
+                  )
+                ],
+              ),
+              //Text('已添加站地址'),
+              SizedBox(
+                height: 200,
+                child: ListView(
+                  children: deviceList.map((d){
+                    return devices(d, (){
+                      setState(() {
+                        if(deviceList.contains(d)){
+                          deviceList.remove(d);
+                        }
+                        widget.onRemove(d);
+                      });
+                    });
+                  }).toList(),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -157,7 +180,7 @@ class _HomePageState extends State<HomePage>{
   static const int _ttDebug   = 3;
   List<int> monitorId = new List<int>();
   List<Entity> _entityList;
-  List<Entity> monitorDataList = new List<Entity>();
+  List<MonitorData> monitorDataList = new List<MonitorData>();
 
   @override
   void initState() {
@@ -178,7 +201,7 @@ class _HomePageState extends State<HomePage>{
   }
 
   void showMenuSelection(int value) {
-    Entity e;
+    MonitorData e;
 
     if(value == _addDevice){
       showDemoDialog(
@@ -186,9 +209,12 @@ class _HomePageState extends State<HomePage>{
           child: AddDevice(monitorId,
             onRemove: (device){
               setState(() {
+                if(monitorId.contains(device)){
+                  monitorId.remove(device);
+                }
                 if(monitorDataList.isNotEmpty){
                   monitorDataList.forEach((m){
-                    if(int.parse(m.rtuId) == device){
+                    if(m.getRtuId() == device){
                       e = m;
                     }
                   });
@@ -214,28 +240,30 @@ class _HomePageState extends State<HomePage>{
     }
   }
 
-  void _onMonitorListUpdate(Entity data){
+  void _onMonitorListUpdate(List<Entity> data){
     bool exist = false;
     int index;
 
     if(monitorDataList.isEmpty){
-      monitorDataList.add(data);
+      monitorDataList.add(new MonitorData(data));
     }
     else{
       monitorDataList.forEach((m){
-        if(int.parse(m.rtuId) == int.parse(data.rtuId)){
+        if(m.getRtuId() == int.parse(data[0].rtuId)){
           exist = true;
           index = monitorDataList.indexOf(m);
         }
       });
 
       if(exist == false){
-        monitorDataList.add(data);
+        monitorDataList.add(new MonitorData(data));
       }
       else{
-        monitorDataList[index] = data;
+        monitorDataList[index].update(data);
       }
     }
+
+    print('monitorDataList len:' + monitorDataList.length.toString());
   }
 
   void _getData(int id) async {
@@ -244,18 +272,28 @@ class _HomePageState extends State<HomePage>{
       //print(_entityList[_entityList.length - 1].id.toString());
     });
 
-    //刷新界面
-    setState(() {
-      if(_entityList.isNotEmpty && (_entityList.length > 0 )){
-        _onMonitorListUpdate(_entityList[_entityList.length - 1]);
-      }
-    });
+    if(_entityList != null){
+      print('getData OK');
+    }
+    else{
+      print('getData timeout');
+    }
+
+    if(_entityList != null){
+      //刷新界面
+      setState(() {
+        if(_entityList.isNotEmpty && (_entityList.length > 0 )){
+          _onMonitorListUpdate(_entityList);
+        }
+      });
+    }
   }
 
   Future<void> _handleRefresh() async{
     await Future.delayed(Duration(seconds: 1), () {
       if(monitorId.isNotEmpty && monitorId.length > 0){
         monitorId.forEach((m){
+          print('device:' + m.toString());
           _getData(m);
         });
       }
@@ -303,8 +341,12 @@ class _HomePageState extends State<HomePage>{
         //physics: BouncingScrollPhysics(),
         physics: AlwaysScrollableScrollPhysics(),
         children: monitorDataList.map((d){
-          return RtuDeviceCard(d,
-            onDelete: (){
+          return RtuDeviceCard(d.getLastEntity(),
+            onTap: (){
+              Navigator.push(
+                  context,
+                  new MaterialPageRoute(builder: (context) => DataTablePage(d.getRtuId(), d.getType(), d.getEntityList()))
+              );
             //onMonitorListRemove(d);
             },
           );
@@ -398,8 +440,8 @@ class _HomePageState extends State<HomePage>{
 
 class RtuDeviceCard extends StatefulWidget{
   final Entity data;
-  final VoidCallback onDelete;
-  RtuDeviceCard(this.data, {this.onDelete});
+  final VoidCallback onTap;
+  RtuDeviceCard(this.data, {this.onTap});
   _RtuDeviceCardState createState() => _RtuDeviceCardState();
 }
 
@@ -470,6 +512,7 @@ class _RtuDeviceCardState extends State<RtuDeviceCard>{
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      onTap: widget.onTap,
       child: Card(
         margin: EdgeInsets.only(top: 5.0, bottom: 5.0, left: 20.0, right: 20.0),
         child: Column(
@@ -489,7 +532,7 @@ class _RtuDeviceCardState extends State<RtuDeviceCard>{
                     ),
                   ),
                   GestureDetector(
-                    onTap: widget.onDelete,
+                    //onTap: widget.onTap,
                     child: Icon(Icons.keyboard_arrow_right, color: Colors.grey,),
                   ),
                 ],
