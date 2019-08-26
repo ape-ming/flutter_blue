@@ -5,7 +5,11 @@ import 'package:flutter/material.dart' as prefix0;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+<<<<<<< HEAD
 import 'package:flutter/widgets.dart' as prefix1;
+=======
+import 'data_table_page.dart';
+>>>>>>> 7a1647fd0e1466d0e8ac1b8b7e3d79388bca6e19
 import 'main.dart';
 import 'http_helper.dart';
 import 'package:dio/dio.dart';
@@ -13,7 +17,9 @@ import 'entity.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'monitor_data.dart';
 import 'rtu_ble_protocol.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 class DioData{
   static _filtration(Response response,callBack(t)){
@@ -24,8 +30,10 @@ class DioData{
     }
   }
   static monitorData(int id, callBack(t)) async{
+    print('request:' + id.toString());
     var response = await HttpHelper().request("Tools/DataHandler.ashx?action=getjsonvalue&SearName=rtu_id&SearValue=$id");
     if(response != null){
+      print(response.data);
       List<Entity> list = getEntityList(json.decode(response.data));
       callBack(list);
     }
@@ -45,9 +53,21 @@ class _MainAppState extends State<MainApp>{
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(_style);
     return MaterialApp(
+
       debugShowCheckedModeBanner: false,
       title: 'RTU调试',
       home: new HomePage(),
+      localizationsDelegates: [
+        //此处
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
+      supportedLocales: [
+        //此处
+        const Locale('zh', 'CH'),
+        const Locale('en', 'US'),
+      ],
+      locale: Locale('zh'),
     );
   }
 }
@@ -87,6 +107,7 @@ class _AddDeviceState extends State<AddDevice>{
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text('添加站地址'),
+<<<<<<< HEAD
       /*
       actions: <Widget>[
         FlatButton(
@@ -95,6 +116,8 @@ class _AddDeviceState extends State<AddDevice>{
         ),
       ],
        */
+=======
+>>>>>>> 7a1647fd0e1466d0e8ac1b8b7e3d79388bca6e19
       content: Container(
         width: 200,
         height: 300,
@@ -102,6 +125,7 @@ class _AddDeviceState extends State<AddDevice>{
           //padding: EdgeInsets.all(10.0),
           child: Column(
             children: <Widget>[
+<<<<<<< HEAD
               Stack(
                 alignment: Alignment(1.0, 0.0),
                 children: <Widget>[
@@ -137,6 +161,23 @@ class _AddDeviceState extends State<AddDevice>{
                 ],
               ),
 
+=======
+              TextField(
+                //controller: TextEditingController(text: param.start_addr.toString()),
+                  keyboardType: TextInputType.number,
+                  maxLength: 8,
+                  inputFormatters: [
+                    WhitelistingTextInputFormatter.digitsOnly,
+                  ],
+                  decoration: InputDecoration(
+                    hintText: '输入站地址',
+                    labelText: '站地址',
+                  ),
+                  onChanged: (str){
+                    address = int.parse(str);
+                  }
+              ),
+>>>>>>> 7a1647fd0e1466d0e8ac1b8b7e3d79388bca6e19
               Row(
                 children: <Widget>[
                   Expanded(
@@ -149,7 +190,10 @@ class _AddDeviceState extends State<AddDevice>{
                           setState(() {
                             if(!deviceList.contains(address)){
                               deviceList.add(address);
+<<<<<<< HEAD
                               widget.onAdd(address);
+=======
+>>>>>>> 7a1647fd0e1466d0e8ac1b8b7e3d79388bca6e19
                             }
                           });
                         }
@@ -160,12 +204,22 @@ class _AddDeviceState extends State<AddDevice>{
               ),
               //Text('已添加站地址'),
               SizedBox(
+<<<<<<< HEAD
                 height: 160,
+=======
+                height: 200,
+>>>>>>> 7a1647fd0e1466d0e8ac1b8b7e3d79388bca6e19
                 child: ListView(
                   children: deviceList.map((d){
                     return devices(d, (){
                       setState(() {
+<<<<<<< HEAD
                         deviceList.remove(d);
+=======
+                        if(deviceList.contains(d)){
+                          deviceList.remove(d);
+                        }
+>>>>>>> 7a1647fd0e1466d0e8ac1b8b7e3d79388bca6e19
                         widget.onRemove(d);
                       });
                     });
@@ -194,7 +248,7 @@ class _HomePageState extends State<HomePage>{
   static const int _ttDebug   = 3;
   List<int> monitorId = new List<int>();
   List<Entity> _entityList;
-  List<Entity> monitorDataList = new List<Entity>();
+  List<MonitorData> monitorDataList = new List<MonitorData>();
 
   _getMonitorId() async{
     List<String> list;
@@ -252,7 +306,7 @@ class _HomePageState extends State<HomePage>{
   }
 
   void showMenuSelection(int value) {
-    Entity e;
+    MonitorData e;
 
     if(value == _addDevice){
       showDemoDialog(
@@ -261,10 +315,16 @@ class _HomePageState extends State<HomePage>{
             onAdd: (d){_setMonitorId();},
             onRemove: (device){
               setState(() {
+<<<<<<< HEAD
                 _setMonitorId();
+=======
+                if(monitorId.contains(device)){
+                  monitorId.remove(device);
+                }
+>>>>>>> 7a1647fd0e1466d0e8ac1b8b7e3d79388bca6e19
                 if(monitorDataList.isNotEmpty){
                   monitorDataList.forEach((m){
-                    if(int.parse(m.rtuId) == device){
+                    if(m.getRtuId() == device){
                       e = m;
                     }
                   });
@@ -290,28 +350,30 @@ class _HomePageState extends State<HomePage>{
     }
   }
 
-  void _onMonitorListUpdate(Entity data){
+  void _onMonitorListUpdate(List<Entity> data){
     bool exist = false;
     int index;
 
     if(monitorDataList.isEmpty){
-      monitorDataList.add(data);
+      monitorDataList.add(new MonitorData(data));
     }
     else{
       monitorDataList.forEach((m){
-        if(int.parse(m.rtuId) == int.parse(data.rtuId)){
+        if(m.getRtuId() == int.parse(data[0].rtuId)){
           exist = true;
           index = monitorDataList.indexOf(m);
         }
       });
 
       if(exist == false){
-        monitorDataList.add(data);
+        monitorDataList.add(new MonitorData(data));
       }
       else{
-        monitorDataList[index] = data;
+        monitorDataList[index].update(data);
       }
     }
+
+    print('monitorDataList len:' + monitorDataList.length.toString());
   }
 
   Future<void> _getData(int id) async {
@@ -320,20 +382,38 @@ class _HomePageState extends State<HomePage>{
       //print(_entityList[_entityList.length - 1].id.toString());
     });
 
-    //刷新界面
-    setState(() {
-      if(_entityList.isNotEmpty && (_entityList.length > 0 )){
-        _onMonitorListUpdate(_entityList[_entityList.length - 1]);
-      }
-    });
+    if(_entityList != null){
+      print('getData OK');
+    }
+    else{
+      print('getData timeout');
+    }
+
+    if(_entityList != null){
+      //刷新界面
+      setState(() {
+        if(_entityList.isNotEmpty && (_entityList.length > 0 )){
+          _onMonitorListUpdate(_entityList);
+        }
+      });
+    }
   }
 
   Future<void> _handleRefresh() async{
+<<<<<<< HEAD
     final Completer<Null> completer = new Completer<Null>();
 
     if(monitorId.isNotEmpty && monitorId.length > 0){
       for(int i = 0; i < monitorId.length; i++){
         await _getData(monitorId[i]);
+=======
+    await Future.delayed(Duration(seconds: 1), () {
+      if(monitorId.isNotEmpty && monitorId.length > 0){
+        monitorId.forEach((m){
+          print('device:' + m.toString());
+          _getData(m);
+        });
+>>>>>>> 7a1647fd0e1466d0e8ac1b8b7e3d79388bca6e19
       }
     }
 
@@ -383,8 +463,12 @@ class _HomePageState extends State<HomePage>{
         //physics: BouncingScrollPhysics(),
         physics: AlwaysScrollableScrollPhysics(),
         children: monitorDataList.map((d){
-          return RtuDeviceCard(d,
-            onDelete: (){
+          return RtuDeviceCard(d.getLastEntity(),
+            onTap: (){
+              Navigator.push(
+                  context,
+                  new MaterialPageRoute(builder: (context) => DataTablePage(d.getRtuId(), d.getType(), d.getEntityList()))
+              );
             //onMonitorListRemove(d);
             },
           );
@@ -478,8 +562,8 @@ class _HomePageState extends State<HomePage>{
 
 class RtuDeviceCard extends StatefulWidget{
   final Entity data;
-  final VoidCallback onDelete;
-  RtuDeviceCard(this.data, {this.onDelete});
+  final VoidCallback onTap;
+  RtuDeviceCard(this.data, {this.onTap});
   _RtuDeviceCardState createState() => _RtuDeviceCardState();
 }
 
@@ -550,6 +634,7 @@ class _RtuDeviceCardState extends State<RtuDeviceCard>{
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      onTap: widget.onTap,
       child: Card(
         margin: EdgeInsets.only(top: 5.0, bottom: 5.0, left: 20.0, right: 20.0),
         child: Column(
@@ -569,7 +654,7 @@ class _RtuDeviceCardState extends State<RtuDeviceCard>{
                     ),
                   ),
                   GestureDetector(
-                    onTap: widget.onDelete,
+                    //onTap: widget.onTap,
                     child: Icon(Icons.keyboard_arrow_right, color: Colors.grey,),
                   ),
                 ],
