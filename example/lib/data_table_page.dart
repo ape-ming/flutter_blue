@@ -5,6 +5,29 @@ import 'package:fl_chart/fl_chart.dart';
 
 
 class LineChartView extends StatelessWidget {
+  List<Entity> _entityList;
+  MonitorType _type;
+  final int _maxCount = 100;
+  double maxX = 100;
+  double maxY = 10;
+
+  LineChartView(MonitorType type, List<Entity> entityList){
+    _type = type;
+    _entityList = entityList.reversed.toList();
+  }
+
+  List<FlSpot> airHeightSpot(){
+    List<FlSpot> spots = new List<FlSpot>();
+
+    if(_entityList.isNotEmpty && _entityList.length > 0){
+      int length = _maxCount > _entityList.length ? _entityList.length : _maxCount;
+      for(int i = 0; i < length; i++){
+        double data = _entityList[length - i - 1].airHeight < 0 ? 0 : _entityList[length - i - 1].airHeight;
+        spots.add(FlSpot(i.toDouble(), data));
+      }
+    }
+    return spots;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,29 +38,37 @@ class LineChartView extends StatelessWidget {
     return AspectRatio(
       aspectRatio: 1.70,
       child: Container(
-        decoration: BoxDecoration(
-            borderRadius: BorderRadius.all(Radius.circular(18)),
-            color: Color(0xff232d37)
-        ),
         child: Padding(
           padding: const EdgeInsets.only(right: 18.0, left: 12.0, top: 24, bottom: 12),
           child: FlChart(
             chart: LineChart(
               LineChartData(
+                lineTouchData: LineTouchData(
+                    getTouchedSpotIndicator: (List<TouchedSpot> spots) {
+                      return spots.map((spot) {
+                        return TouchedSpotIndicatorData(
+                          const FlLine(color: Colors.orange, strokeWidth: 1),
+                          const FlDotData(dotSize: 2, dotColor: Colors.orange),
+                        );
+                      }).toList();
+                    },
+                    touchTooltipData: TouchTooltipData(
+                        tooltipBgColor: Colors.blueAccent,
+                        getTooltipItems: (List<TouchedSpot> spots) {
+                          return spots.map((spot) {
+                            final flSpot = spot.spot;
+                            return TooltipItem(
+                              '${_entityList[maxX.toInt() - flSpot.x.toInt() - 1].collectTime.replaceAll(new RegExp(r'T'), ' ')} \n${flSpot.y} m',
+                              const TextStyle(color: Colors.white),
+                            );
+                          }).toList();
+                        }
+                    )
+                ),
                 gridData: FlGridData(
                   show: true,
-                  drawHorizontalGrid: true,
-                  getDrawingVerticalGridLine: (value) {
-                    return const FlLine(
-                      color: Color(0xff37434d),
-                      strokeWidth:  1,
-                    );
-                  },
-                  getDrawingHorizontalGridLine: (value) {
-                    return const FlLine(
-                      color: Color(0xff37434d),
-                      strokeWidth: 1,
-                    );
+                  checkToShowVerticalGrid: (double value) {
+                    return (value % 2 == 0);
                   },
                 ),
                 titlesData: FlTitlesData(
@@ -46,17 +77,15 @@ class LineChartView extends StatelessWidget {
                     showTitles: true,
                     reservedSize: 22,
                     textStyle: TextStyle(
-                        color: const Color(0xff68737d),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16
+                        color: Colors.grey,
+                        fontWeight: FontWeight.normal,
+                        fontSize: 12
                     ),
                     getTitles: (value) {
-                      switch(value.toInt()) {
-                        case 2: return 'MAR';
-                        case 5: return 'JUN';
-                        case 8: return 'SEP';
+                      int v = value.toInt();
+                      if(v % 10 == 0){
+                        return '$v';
                       }
-
                       return '';
                     },
                     margin: 8,
@@ -64,15 +93,14 @@ class LineChartView extends StatelessWidget {
                   leftTitles: SideTitles(
                     showTitles: true,
                     textStyle: TextStyle(
-                      color: const Color(0xff67727d),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.normal,
+                      fontSize: 12,
                     ),
                     getTitles: (value) {
-                      switch(value.toInt()) {
-                        case 1: return '10k';
-                        case 3: return '30k';
-                        case 5: return '50k';
+                      int v = value.toInt();
+                      if(v % 2 == 0){
+                        return '$v';
                       }
                       return '';
                     },
@@ -82,32 +110,41 @@ class LineChartView extends StatelessWidget {
                 ),
                 borderData: FlBorderData(
                     show: true,
-                    border: Border.all(color: Color(0xff37434d), width: 1)
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Colors.grey,
+                        width: 1,
+                      ),
+                      left: BorderSide(
+                        color: Colors.grey,
+                        width: 1,
+                      ),
+                      right: BorderSide(
+                        color: Colors.transparent,
+                      ),
+                      top: BorderSide(
+                        color: Colors.transparent,
+                      ),
+                    )
                 ),
                 minX: 0,
-                maxX: 11,
+                maxX: maxX,
                 minY: 0,
-                maxY: 6,
+                maxY: maxY,
                 lineBarsData: [
                   LineChartBarData(
-                    spots: [
-                      FlSpot(0, 3),
-                      FlSpot(2.6, 2),
-                      FlSpot(4.9, 5),
-                      FlSpot(6.8, 3.1),
-                      FlSpot(8, 4),
-                      FlSpot(9.5, 3),
-                      FlSpot(11, 4),
+                    spots: airHeightSpot(),
+                    isCurved: false,
+                    colors: [
+                      Colors.blue,
                     ],
-                    isCurved: true,
-                    colors: gradientColors,
-                    barWidth: 5,
+                    barWidth: 1,
                     isStrokeCapRound: true,
                     dotData: FlDotData(
                       show: false,
                     ),
                     belowBarData: BelowBarData(
-                      show: true,
+                      show: false,
                       colors: gradientColors.map((color) => color.withOpacity(0.3)).toList(),
                     ),
                   ),
@@ -252,7 +289,7 @@ class _DataTablePageStatus extends State<DataTablePage>{
               bottom: false,
               child: ListView(
                 children: <Widget>[
-                  LineChartView(),
+                  LineChartView(widget._type, widget._entityList),
                 ],
               ),
             ),
