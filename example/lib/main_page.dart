@@ -5,11 +5,8 @@ import 'package:flutter/material.dart' as prefix0;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-<<<<<<< HEAD
-import 'package:flutter/widgets.dart' as prefix1;
-=======
+
 import 'data_table_page.dart';
->>>>>>> 7a1647fd0e1466d0e8ac1b8b7e3d79388bca6e19
 import 'main.dart';
 import 'http_helper.dart';
 import 'package:dio/dio.dart';
@@ -107,17 +104,6 @@ class _AddDeviceState extends State<AddDevice>{
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text('添加站地址'),
-<<<<<<< HEAD
-      /*
-      actions: <Widget>[
-        FlatButton(
-          onPressed: (){Navigator.pop(context, 0);},
-          child: Text('关闭'),
-        ),
-      ],
-       */
-=======
->>>>>>> 7a1647fd0e1466d0e8ac1b8b7e3d79388bca6e19
       content: Container(
         width: 200,
         height: 300,
@@ -125,43 +111,6 @@ class _AddDeviceState extends State<AddDevice>{
           //padding: EdgeInsets.all(10.0),
           child: Column(
             children: <Widget>[
-<<<<<<< HEAD
-              Stack(
-                alignment: Alignment(1.0, 0.0),
-                children: <Widget>[
-                  Row(
-                    children: <Widget>[
-                      Padding(
-                        padding: EdgeInsets.only(right: 10.0),
-                        child: Icon(Icons.devices, color: Colors.grey,),
-                      ),
-                      Expanded(
-                        child: TextField(
-                            controller: addressController,
-                            keyboardType: TextInputType.number,
-                            maxLength: 8,
-                            inputFormatters: [
-                              WhitelistingTextInputFormatter.digitsOnly,
-                            ],
-                            decoration: InputDecoration(
-                              hintText: '输入站地址',
-                              labelText: '站地址',
-                            ),
-                            onChanged: (str){
-                              address = int.parse(str);
-                            }
-                        ),
-                      ),
-                    ],
-                  ),
-                  IconButton(
-                    onPressed: (){addressController.clear();},
-                    icon: Icon(Icons.clear, color: Colors.grey),
-                  ),
-                ],
-              ),
-
-=======
               TextField(
                 //controller: TextEditingController(text: param.start_addr.toString()),
                   keyboardType: TextInputType.number,
@@ -177,7 +126,6 @@ class _AddDeviceState extends State<AddDevice>{
                     address = int.parse(str);
                   }
               ),
->>>>>>> 7a1647fd0e1466d0e8ac1b8b7e3d79388bca6e19
               Row(
                 children: <Widget>[
                   Expanded(
@@ -190,10 +138,7 @@ class _AddDeviceState extends State<AddDevice>{
                           setState(() {
                             if(!deviceList.contains(address)){
                               deviceList.add(address);
-<<<<<<< HEAD
                               widget.onAdd(address);
-=======
->>>>>>> 7a1647fd0e1466d0e8ac1b8b7e3d79388bca6e19
                             }
                           });
                         }
@@ -204,22 +149,14 @@ class _AddDeviceState extends State<AddDevice>{
               ),
               //Text('已添加站地址'),
               SizedBox(
-<<<<<<< HEAD
-                height: 160,
-=======
                 height: 200,
->>>>>>> 7a1647fd0e1466d0e8ac1b8b7e3d79388bca6e19
                 child: ListView(
                   children: deviceList.map((d){
                     return devices(d, (){
                       setState(() {
-<<<<<<< HEAD
-                        deviceList.remove(d);
-=======
                         if(deviceList.contains(d)){
                           deviceList.remove(d);
                         }
->>>>>>> 7a1647fd0e1466d0e8ac1b8b7e3d79388bca6e19
                         widget.onRemove(d);
                       });
                     });
@@ -256,6 +193,10 @@ class _HomePageState extends State<HomePage>{
     var prefs = await SharedPreferences.getInstance();
 
     list = prefs.getStringList('monitor_id');
+
+    print('monitor_id list');
+    print(list.toString());
+
     setState(() {
       monitorId.clear();
       if((list != null) && list.isNotEmpty){
@@ -278,6 +219,10 @@ class _HomePageState extends State<HomePage>{
         list.add(f.toString());
       });
     }
+
+    print('monitor_id list set');
+    print(list.toString());
+
     await prefs.setStringList('monitor_id', list);
   }
 
@@ -312,16 +257,20 @@ class _HomePageState extends State<HomePage>{
       showDemoDialog(
           context: context,
           child: AddDevice(monitorId,
-            onAdd: (d){_setMonitorId();},
+            onAdd: (d){
+              if(!monitorId.contains(d)){
+                monitorId.add(d);
+              }
+              _setMonitorId();
+            },
             onRemove: (device){
               setState(() {
-<<<<<<< HEAD
-                _setMonitorId();
-=======
                 if(monitorId.contains(device)){
                   monitorId.remove(device);
                 }
->>>>>>> 7a1647fd0e1466d0e8ac1b8b7e3d79388bca6e19
+
+                _setMonitorId();
+
                 if(monitorDataList.isNotEmpty){
                   monitorDataList.forEach((m){
                     if(m.getRtuId() == device){
@@ -400,20 +349,11 @@ class _HomePageState extends State<HomePage>{
   }
 
   Future<void> _handleRefresh() async{
-<<<<<<< HEAD
     final Completer<Null> completer = new Completer<Null>();
 
     if(monitorId.isNotEmpty && monitorId.length > 0){
       for(int i = 0; i < monitorId.length; i++){
         await _getData(monitorId[i]);
-=======
-    await Future.delayed(Duration(seconds: 1), () {
-      if(monitorId.isNotEmpty && monitorId.length > 0){
-        monitorId.forEach((m){
-          print('device:' + m.toString());
-          _getData(m);
-        });
->>>>>>> 7a1647fd0e1466d0e8ac1b8b7e3d79388bca6e19
       }
     }
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_blue_example/monitor_data.dart';
 import 'entity.dart';
+import 'monitor_data.dart';
 
 class DataSource extends DataTableSource{
   List<Entity> _entityList;
