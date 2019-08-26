@@ -369,209 +369,213 @@ class _AddElement extends State<AddElement>{
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('添加要素'),
-      content: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.all(5.0),
-            child: Column(
-              children: <Widget>[
-                Container(
-                  padding: EdgeInsets.all(5.0),
-                  child: Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: Text('要素名称'),
-                      ),
-                      PopupMenuButton<element_name>(
-                        padding: EdgeInsets.zero,
-                        initialValue: param.name,
-                        onSelected: (value){setState(() {
-                          param.name = value;
-                        });},
-                        child: Row(
-                          children: <Widget>[
-                            Text(widget.protocol.getNameText(param.name)),
-                            Icon(Icons.keyboard_arrow_down),
-                          ],
+      content: Container(
+        width: 200,
+        height: 300,
+        child: SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.all(5.0),
+              child: Column(
+                children: <Widget>[
+                  Container(
+                    padding: EdgeInsets.all(5.0),
+                    child: Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: Text('要素名称'),
                         ),
-                        itemBuilder: (BuildContext context) => _buildSelectItem(widget.protocol.getNameMap()),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: EdgeInsets.all(5.0),
-                  child: Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: Text('单位'),
-                      ),
-                      PopupMenuButton<element_unit>(
-                        padding: EdgeInsets.zero,
-                        initialValue: param.unit,
-                        onSelected: (value){setState(() {
-                          param.unit = value;
-                        });},
-                        child: Row(
-                          children: <Widget>[
-                            Text(widget.protocol.getUnitText(param.unit)),
-                            Icon(Icons.keyboard_arrow_down),
-                          ],
+                        PopupMenuButton<element_name>(
+                          padding: EdgeInsets.zero,
+                          initialValue: param.name,
+                          onSelected: (value){setState(() {
+                            param.name = value;
+                          });},
+                          child: Row(
+                            children: <Widget>[
+                              Text(widget.protocol.getNameText(param.name)),
+                              Icon(Icons.keyboard_arrow_down),
+                            ],
+                          ),
+                          itemBuilder: (BuildContext context) => _buildSelectItem(widget.protocol.getNameMap()),
                         ),
-                        itemBuilder: (BuildContext context) => _buildSelectItem(widget.protocol.getUnitMap()),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: EdgeInsets.all(5.0),
-                  child: Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: Text('功能码'),
-                      ),
-                      PopupMenuButton<element_fun_code>(
-                        padding: EdgeInsets.zero,
-                        initialValue: param.fun_code,
-                        onSelected: (value){setState(() {
-                          param.fun_code = value;
-                        });},
-                        child: Row(
-                          children: <Widget>[
-                            Text(widget.protocol.getFuncCodeText(param.fun_code)),
-                            Icon(Icons.keyboard_arrow_down),
-                          ],
-                        ),
-                        itemBuilder: (BuildContext context) => _buildSelectItem(widget.protocol.getFuncCodeMap()),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: EdgeInsets.all(5.0),
-                  child: Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: Text('寄存器个数'),
-                      ),
-                      PopupMenuButton<int>(
-                        padding: EdgeInsets.zero,
-                        initialValue: param.reg_count,
-                        onSelected: (value){setState(() {
-                          param.reg_count = value;
-                        });},
-                        child: Row(
-                          children: <Widget>[
-                            Text(param.reg_count.toString()),
-                            Icon(Icons.keyboard_arrow_down),
-                          ],
-                        ),
-                        itemBuilder: (BuildContext context) => <PopupMenuItem<int>>[
-                          PopupMenuItem<int>(
-                            value: 1,
-                            child: Text(1.toString()),
-                          ),
-                          PopupMenuItem<int>(
-                            value: 2,
-                            child: Text(2.toString()),
-                          ),
-                          PopupMenuItem<int>(
-                            value: 3,
-                            child: Text(3.toString()),
-                          ),
-                          PopupMenuItem<int>(
-                            value: 4,
-                            child: Text(4.toString()),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: EdgeInsets.all(5.0),
-                  child: Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: Text('缩放模式'),
-                      ),
-                      PopupMenuButton<String>(
-                        padding: EdgeInsets.zero,
-                        initialValue: _scalingMode,
-                        onSelected: (value){setState(() {
-                          _scalingMode = value;
-                        });},
-                        child: Row(
-                          children: <Widget>[
-                            Text(_scalingMode),
-                            Icon(Icons.keyboard_arrow_down),
-                          ],
-                        ),
-                        itemBuilder: (BuildContext context) => <PopupMenuItem<String>>[
-                          PopupMenuItem<String>(
-                            value: '缩小',
-                            child: Text('缩小'),
-                          ),
-                          PopupMenuItem<String>(
-                            value: '放大',
-                            child: Text('放大'),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: EdgeInsets.only(left: 5.0, right: 5.0, bottom: 5.0),
-                  child:TextField(
-                    controller: TextEditingController(text: param.start_addr.toString()),
-                    keyboardType: TextInputType.number,
-                    maxLength: 5,
-                    inputFormatters: [
-                      WhitelistingTextInputFormatter.digitsOnly,
-                    ],
-                    decoration: InputDecoration(
-                      hintText: '输入起始地址',
-                      labelText: '起始地址',
+                      ],
                     ),
-                    onChanged: (str){param.start_addr = int.parse(str);}
                   ),
-                ),
-                Container(
-                  padding: EdgeInsets.only(left: 5.0, right: 5.0, bottom: 5.0),
-                  child:TextField(
-                    controller: TextEditingController(text: param.scaling.abs().toString()),
-                    keyboardType: TextInputType.number,
-                    maxLength: 5,
-                    inputFormatters: [
-                      WhitelistingTextInputFormatter.digitsOnly,
-                    ],
-                    decoration: InputDecoration(
-                      hintText: '输入缩放倍数',
-                      labelText: '缩放倍数',
+                  Container(
+                    padding: EdgeInsets.all(5.0),
+                    child: Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: Text('单位'),
+                        ),
+                        PopupMenuButton<element_unit>(
+                          padding: EdgeInsets.zero,
+                          initialValue: param.unit,
+                          onSelected: (value){setState(() {
+                            param.unit = value;
+                          });},
+                          child: Row(
+                            children: <Widget>[
+                              Text(widget.protocol.getUnitText(param.unit)),
+                              Icon(Icons.keyboard_arrow_down),
+                            ],
+                          ),
+                          itemBuilder: (BuildContext context) => _buildSelectItem(widget.protocol.getUnitMap()),
+                        ),
+                      ],
                     ),
-                    onChanged: (str){
-                      param.scaling = int.parse(str);
-                      if(_scalingMode == '缩小')
-                        param.scaling = -param.scaling;
+                  ),
+                  Container(
+                    padding: EdgeInsets.all(5.0),
+                    child: Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: Text('功能码'),
+                        ),
+                        PopupMenuButton<element_fun_code>(
+                          padding: EdgeInsets.zero,
+                          initialValue: param.fun_code,
+                          onSelected: (value){setState(() {
+                            param.fun_code = value;
+                          });},
+                          child: Row(
+                            children: <Widget>[
+                              Text(widget.protocol.getFuncCodeText(param.fun_code)),
+                              Icon(Icons.keyboard_arrow_down),
+                            ],
+                          ),
+                          itemBuilder: (BuildContext context) => _buildSelectItem(widget.protocol.getFuncCodeMap()),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: EdgeInsets.all(5.0),
+                    child: Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: Text('寄存器个数'),
+                        ),
+                        PopupMenuButton<int>(
+                          padding: EdgeInsets.zero,
+                          initialValue: param.reg_count,
+                          onSelected: (value){setState(() {
+                            param.reg_count = value;
+                          });},
+                          child: Row(
+                            children: <Widget>[
+                              Text(param.reg_count.toString()),
+                              Icon(Icons.keyboard_arrow_down),
+                            ],
+                          ),
+                          itemBuilder: (BuildContext context) => <PopupMenuItem<int>>[
+                            PopupMenuItem<int>(
+                              value: 1,
+                              child: Text(1.toString()),
+                            ),
+                            PopupMenuItem<int>(
+                              value: 2,
+                              child: Text(2.toString()),
+                            ),
+                            PopupMenuItem<int>(
+                              value: 3,
+                              child: Text(3.toString()),
+                            ),
+                            PopupMenuItem<int>(
+                              value: 4,
+                              child: Text(4.toString()),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: EdgeInsets.all(5.0),
+                    child: Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: Text('缩放模式'),
+                        ),
+                        PopupMenuButton<String>(
+                          padding: EdgeInsets.zero,
+                          initialValue: _scalingMode,
+                          onSelected: (value){setState(() {
+                            _scalingMode = value;
+                          });},
+                          child: Row(
+                            children: <Widget>[
+                              Text(_scalingMode),
+                              Icon(Icons.keyboard_arrow_down),
+                            ],
+                          ),
+                          itemBuilder: (BuildContext context) => <PopupMenuItem<String>>[
+                            PopupMenuItem<String>(
+                              value: '缩小',
+                              child: Text('缩小'),
+                            ),
+                            PopupMenuItem<String>(
+                              value: '放大',
+                              child: Text('放大'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: EdgeInsets.only(left: 5.0, right: 5.0, bottom: 5.0),
+                    child:TextField(
+                        controller: TextEditingController(text: param.start_addr.toString()),
+                        keyboardType: TextInputType.number,
+                        maxLength: 5,
+                        inputFormatters: [
+                          WhitelistingTextInputFormatter.digitsOnly,
+                        ],
+                        decoration: InputDecoration(
+                          hintText: '输入起始地址',
+                          labelText: '起始地址',
+                        ),
+                        onChanged: (str){param.start_addr = int.parse(str);}
+                    ),
+                  ),
+                  Container(
+                    padding: EdgeInsets.only(left: 5.0, right: 5.0, bottom: 5.0),
+                    child:TextField(
+                      controller: TextEditingController(text: param.scaling.abs().toString()),
+                      keyboardType: TextInputType.number,
+                      maxLength: 5,
+                      inputFormatters: [
+                        WhitelistingTextInputFormatter.digitsOnly,
+                      ],
+                      decoration: InputDecoration(
+                        hintText: '输入缩放倍数',
+                        labelText: '缩放倍数',
+                      ),
+                      onChanged: (str){
+                        param.scaling = int.parse(str);
+                        if(_scalingMode == '缩小')
+                          param.scaling = -param.scaling;
                       },
+                    ),
                   ),
-                ),
-                Container(
-                  padding: EdgeInsets.only(top: 20.0),
-                  child: Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: OutlineButton(
-                          child: const Text('保存'),
-                          onPressed: onOkPressed,
-                        ),
-                      )
-                    ],
+                  Container(
+                    padding: EdgeInsets.only(top: 20.0),
+                    child: Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: OutlineButton(
+                            child: const Text('保存'),
+                            onPressed: onOkPressed,
+                          ),
+                        )
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-          )
+                ],
+              ),
+            )
+        ),
       ),
     );
   }

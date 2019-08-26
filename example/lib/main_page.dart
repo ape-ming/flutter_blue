@@ -5,11 +5,13 @@ import 'package:flutter/material.dart' as prefix0;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter/widgets.dart' as prefix1;
 import 'main.dart';
 import 'http_helper.dart';
 import 'package:dio/dio.dart';
 import 'entity.dart';
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'rtu_ble_protocol.dart';
 
@@ -52,8 +54,9 @@ class _MainAppState extends State<MainApp>{
 
 class AddDevice extends StatefulWidget{
   final List<int> deviceList;
+  final Function onAdd;
   final Function onRemove;
-  AddDevice(this.deviceList, {this.onRemove});
+  AddDevice(this.deviceList, {this.onAdd, this.onRemove});
 
   _AddDeviceState createState() => _AddDeviceState();
 }
@@ -61,6 +64,7 @@ class AddDevice extends StatefulWidget{
 class _AddDeviceState extends State<AddDevice>{
   int address;
   List<int> deviceList;
+  TextEditingController addressController = new TextEditingController();
 
   Widget devices(int id, VoidCallback onMove){
     return ListTile(
@@ -83,60 +87,93 @@ class _AddDeviceState extends State<AddDevice>{
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text('添加站地址'),
-      content: SingleChildScrollView(
-        //padding: EdgeInsets.all(10.0),
-        child: Column(
-          children: <Widget>[
-            TextField(
-              //controller: TextEditingController(text: param.start_addr.toString()),
-                keyboardType: TextInputType.number,
-                maxLength: 8,
-                inputFormatters: [
-                  WhitelistingTextInputFormatter.digitsOnly,
-                ],
-                decoration: InputDecoration(
-                  hintText: '输入站地址',
-                  labelText: '站地址',
-                ),
-                onChanged: (str){
-                  address = int.parse(str);
-                }
-            ),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: OutlineButton.icon(
-                    icon: const Icon(Icons.add, size: 18.0),
-                    label: const Text('添加'),
-                    onPressed: () {
-                      if(address > 0){
-                        //widget.onAdd(address);
-                        setState(() {
-                          if(!deviceList.contains(address)){
-                            deviceList.add(address);
-                          }
-                        });
-                      }
-                    },
+      /*
+      actions: <Widget>[
+        FlatButton(
+          onPressed: (){Navigator.pop(context, 0);},
+          child: Text('关闭'),
+        ),
+      ],
+       */
+      content: Container(
+        width: 200,
+        height: 300,
+        child: SingleChildScrollView(
+          //padding: EdgeInsets.all(10.0),
+          child: Column(
+            children: <Widget>[
+              Stack(
+                alignment: Alignment(1.0, 0.0),
+                children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      Padding(
+                        padding: EdgeInsets.only(right: 10.0),
+                        child: Icon(Icons.devices, color: Colors.grey,),
+                      ),
+                      Expanded(
+                        child: TextField(
+                            controller: addressController,
+                            keyboardType: TextInputType.number,
+                            maxLength: 8,
+                            inputFormatters: [
+                              WhitelistingTextInputFormatter.digitsOnly,
+                            ],
+                            decoration: InputDecoration(
+                              hintText: '输入站地址',
+                              labelText: '站地址',
+                            ),
+                            onChanged: (str){
+                              address = int.parse(str);
+                            }
+                        ),
+                      ),
+                    ],
                   ),
-                )
-              ],
-            ),
-            //Text('已添加站地址'),
-            SizedBox(
-              height: 200,
-              child: ListView(
-                children: deviceList.map((d){
-                  return devices(d, (){
-                    setState(() {
-                      deviceList.remove(d);
-                      widget.onRemove(d);
-                    });
-                  });
-                }).toList(),
+                  IconButton(
+                    onPressed: (){addressController.clear();},
+                    icon: Icon(Icons.clear, color: Colors.grey),
+                  ),
+                ],
               ),
-            ),
-          ],
+
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: OutlineButton.icon(
+                      icon: const Icon(Icons.add, size: 18.0),
+                      label: const Text('添加'),
+                      onPressed: () {
+                        if(address > 0){
+                          //widget.onAdd(address);
+                          setState(() {
+                            if(!deviceList.contains(address)){
+                              deviceList.add(address);
+                              widget.onAdd(address);
+                            }
+                          });
+                        }
+                      },
+                    ),
+                  )
+                ],
+              ),
+              //Text('已添加站地址'),
+              SizedBox(
+                height: 160,
+                child: ListView(
+                  children: deviceList.map((d){
+                    return devices(d, (){
+                      setState(() {
+                        deviceList.remove(d);
+                        widget.onRemove(d);
+                      });
+                    });
+                  }).toList(),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -159,9 +196,46 @@ class _HomePageState extends State<HomePage>{
   List<Entity> _entityList;
   List<Entity> monitorDataList = new List<Entity>();
 
+  _getMonitorId() async{
+    List<String> list;
+
+    var prefs = await SharedPreferences.getInstance();
+
+    list = prefs.getStringList('monitor_id');
+    setState(() {
+      monitorId.clear();
+      if((list != null) && list.isNotEmpty){
+        list.forEach((f){
+          monitorId.add(int.parse(f));
+        });
+      }
+    });
+
+    _handleRefresh();
+  }
+
+  _setMonitorId() async{
+    List<String> list = new List<String>();
+
+    var prefs = await SharedPreferences.getInstance();
+
+    if(monitorId.isNotEmpty){
+      monitorId.forEach((f){
+        list.add(f.toString());
+      });
+    }
+    await prefs.setStringList('monitor_id', list);
+  }
+
   @override
   void initState() {
     super.initState();
+    _getMonitorId();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   void showDemoDialog<T>({ BuildContext context, Widget child }) {
@@ -184,8 +258,10 @@ class _HomePageState extends State<HomePage>{
       showDemoDialog(
           context: context,
           child: AddDevice(monitorId,
+            onAdd: (d){_setMonitorId();},
             onRemove: (device){
               setState(() {
+                _setMonitorId();
                 if(monitorDataList.isNotEmpty){
                   monitorDataList.forEach((m){
                     if(int.parse(m.rtuId) == device){
@@ -238,7 +314,7 @@ class _HomePageState extends State<HomePage>{
     }
   }
 
-  void _getData(int id) async {
+  Future<void> _getData(int id) async {
     await DioData.monitorData(id, (t) {
       _entityList = t;
       //print(_entityList[_entityList.length - 1].id.toString());
@@ -253,13 +329,17 @@ class _HomePageState extends State<HomePage>{
   }
 
   Future<void> _handleRefresh() async{
-    await Future.delayed(Duration(seconds: 1), () {
-      if(monitorId.isNotEmpty && monitorId.length > 0){
-        monitorId.forEach((m){
-          _getData(m);
-        });
+    final Completer<Null> completer = new Completer<Null>();
+
+    if(monitorId.isNotEmpty && monitorId.length > 0){
+      for(int i = 0; i < monitorId.length; i++){
+        await _getData(monitorId[i]);
       }
-    });
+    }
+
+    completer?.complete();
+
+    return completer.future;
   }
 
   void onMonitorListRemove(Entity d){
@@ -295,7 +375,7 @@ class _HomePageState extends State<HomePage>{
     Widget body;
     if(monitorDataList.isEmpty){
       body = Center(
-        child: Text('没有添加任何设备'),
+        child: Text('无数据'),
       );
     }
     else{
