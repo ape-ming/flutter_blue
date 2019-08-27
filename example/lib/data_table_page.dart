@@ -2,18 +2,46 @@ import 'package:flutter/material.dart';
 import 'entity.dart';
 import 'monitor_data.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/widgets.dart';
 
-
-class LineChartView extends StatelessWidget {
+class LineChartView extends StatefulWidget{
   List<Entity> _entityList;
   MonitorType _type;
-  final int _maxCount = 100;
-  double maxX = 100;
-  double maxY = 10;
 
   LineChartView(MonitorType type, List<Entity> entityList){
     _type = type;
     _entityList = entityList.reversed.toList();
+  }
+  _LineChartViewState createState() => _LineChartViewState();
+}
+
+class _LineChartViewState extends State<LineChartView> {
+  List<Entity> _entityList;
+  MonitorType _type;
+  final int _maxCount = 100;
+
+  List<FlSpot> _airHeightSpot;
+  List<FlSpot> _waterLevelSpot;
+  List<FlSpot> _flowVelocitySpot;
+  List<FlSpot> _flowVelSigIntensSpot;
+  List<FlSpot> _watLevSigIntensSpot;
+
+  double _maxAirHeight = 0;
+  double _maxWaterLevel = 0;
+  double _maxFlowVelocity = 0;
+  double _maxFlowVelSigIntens = 0;
+  double _maxWatLevSigIntens = 0;
+
+  void initState() {
+    super.initState();
+    _entityList = widget._entityList;
+    _type = widget._type;
+
+    _airHeightSpot = airHeightSpot();
+    _waterLevelSpot = waterLevelSpot();
+    _flowVelocitySpot = flowVelocitySpot();
+    _flowVelSigIntensSpot = flowVelSigIntensSpot();
+    _watLevSigIntensSpot = watLevSigIntensSpot();
   }
 
   List<FlSpot> airHeightSpot(){
@@ -24,6 +52,68 @@ class LineChartView extends StatelessWidget {
       for(int i = 0; i < length; i++){
         double data = _entityList[length - i - 1].airHeight < 0 ? 0 : _entityList[length - i - 1].airHeight;
         spots.add(FlSpot(i.toDouble(), data));
+        if(data > _maxAirHeight)
+          _maxAirHeight = data;
+      }
+    }
+    return spots;
+  }
+
+  List<FlSpot> waterLevelSpot(){
+    List<FlSpot> spots = new List<FlSpot>();
+
+    if(_entityList.isNotEmpty && _entityList.length > 0){
+      int length = _maxCount > _entityList.length ? _entityList.length : _maxCount;
+      for(int i = 0; i < length; i++){
+        double data = _entityList[length - i - 1].waterLevel < 0 ? 0 : _entityList[length - i - 1].waterLevel;
+        spots.add(FlSpot(i.toDouble(), data));
+        if(data > _maxWaterLevel)
+          _maxWaterLevel = data;
+      }
+    }
+    return spots;
+  }
+
+  List<FlSpot> flowVelocitySpot(){
+    List<FlSpot> spots = new List<FlSpot>();
+
+    if(_entityList.isNotEmpty && _entityList.length > 0){
+      int length = _maxCount > _entityList.length ? _entityList.length : _maxCount;
+      for(int i = 0; i < length; i++){
+        double data = _entityList[length - i - 1].flowVelocity < 0 ? 0 : _entityList[length - i - 1].flowVelocity;
+        spots.add(FlSpot(i.toDouble(), data));
+        if(data > _maxFlowVelocity)
+          _maxFlowVelocity = data;
+      }
+    }
+    return spots;
+  }
+
+  List<FlSpot> flowVelSigIntensSpot(){
+    List<FlSpot> spots = new List<FlSpot>();
+
+    if(_entityList.isNotEmpty && _entityList.length > 0){
+      int length = _maxCount > _entityList.length ? _entityList.length : _maxCount;
+      for(int i = 0; i < length; i++){
+        double data = _entityList[length - i - 1].flowVelSigIntens < 0 ? 0 : _entityList[length - i - 1].flowVelSigIntens;
+        spots.add(FlSpot(i.toDouble(), data));
+        if(data > _maxFlowVelSigIntens)
+          _maxFlowVelSigIntens = data;
+      }
+    }
+    return spots;
+  }
+
+  List<FlSpot> watLevSigIntensSpot(){
+    List<FlSpot> spots = new List<FlSpot>();
+
+    if(_entityList.isNotEmpty && _entityList.length > 0){
+      int length = _maxCount > _entityList.length ? _entityList.length : _maxCount;
+      for(int i = 0; i < length; i++){
+        double data = _entityList[length - i - 1].watLevSigIntens < 0 ? 0 : _entityList[length - i - 1].watLevSigIntens;
+        spots.add(FlSpot(i.toDouble(), data));
+        if(data > _maxWatLevSigIntens)
+          _maxWatLevSigIntens = data;
       }
     }
     return spots;
@@ -35,125 +125,207 @@ class LineChartView extends StatelessWidget {
       Color(0xff23b6e6),
       Color(0xff02d39a),
     ];
-    return AspectRatio(
-      aspectRatio: 1.70,
-      child: Container(
-        child: Padding(
-          padding: const EdgeInsets.only(right: 18.0, left: 12.0, top: 24, bottom: 12),
-          child: FlChart(
-            chart: LineChart(
-              LineChartData(
-                lineTouchData: LineTouchData(
-                    getTouchedSpotIndicator: (List<TouchedSpot> spots) {
-                      return spots.map((spot) {
-                        return TouchedSpotIndicatorData(
-                          const FlLine(color: Colors.orange, strokeWidth: 1),
-                          const FlDotData(dotSize: 2, dotColor: Colors.orange),
-                        );
-                      }).toList();
-                    },
-                    touchTooltipData: TouchTooltipData(
-                        tooltipBgColor: Colors.blueAccent,
-                        getTooltipItems: (List<TouchedSpot> spots) {
-                          return spots.map((spot) {
-                            final flSpot = spot.spot;
-                            return TooltipItem(
-                              '${_entityList[maxX.toInt() - flSpot.x.toInt() - 1].collectTime.replaceAll(new RegExp(r'T'), ' ')} \n${flSpot.y} m',
-                              const TextStyle(color: Colors.white),
-                            );
-                          }).toList();
-                        }
-                    )
+
+    Widget chart(String head, String unit, double maxX, double maxY, List<FlSpot> spotList){
+      return Padding(
+        padding: const EdgeInsets.only(right: 1.0, left: 1.0, top: 10),
+        child: Column(
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.only(right: 18.0, left: 30.0, bottom: 12),
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: Text(head,
+                    style: Theme.of(context).textTheme.subtitle.copyWith(color: Colors.black54),
                 ),
-                gridData: FlGridData(
-                  show: true,
-                  checkToShowVerticalGrid: (double value) {
-                    return (value % 2 == 0);
-                  },
-                ),
-                titlesData: FlTitlesData(
-                  show: true,
-                  bottomTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 22,
-                    textStyle: TextStyle(
-                        color: Colors.grey,
-                        fontWeight: FontWeight.normal,
-                        fontSize: 12
+              ),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.only(right: 18.0, left: 30.0, ),
+              child: Row(
+                children: <Widget>[
+                  Container(
+                    margin: EdgeInsets.only(left: 2, right: 10, top: 0),
+                    alignment: Alignment(0, 0),
+                    height: 12,
+                    width: 12,
+                    decoration: new BoxDecoration(
+                      color: Colors.blue,
                     ),
-                    getTitles: (value) {
-                      int v = value.toInt();
-                      if(v % 10 == 0){
-                        return '$v';
-                      }
-                      return '';
-                    },
-                    margin: 8,
                   ),
-                  leftTitles: SideTitles(
-                    showTitles: true,
-                    textStyle: TextStyle(
-                      color: Colors.grey,
-                      fontWeight: FontWeight.normal,
-                      fontSize: 12,
-                    ),
-                    getTitles: (value) {
-                      int v = value.toInt();
-                      if(v % 2 == 0){
-                        return '$v';
-                      }
-                      return '';
-                    },
-                    reservedSize: 28,
-                    margin: 12,
-                  ),
-                ),
-                borderData: FlBorderData(
-                    show: true,
-                    border: Border(
-                      bottom: BorderSide(
-                        color: Colors.grey,
-                        width: 1,
-                      ),
-                      left: BorderSide(
-                        color: Colors.grey,
-                        width: 1,
-                      ),
-                      right: BorderSide(
-                        color: Colors.transparent,
-                      ),
-                      top: BorderSide(
-                        color: Colors.transparent,
-                      ),
-                    )
-                ),
-                minX: 0,
-                maxX: maxX,
-                minY: 0,
-                maxY: maxY,
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: airHeightSpot(),
-                    isCurved: false,
-                    colors: [
-                      Colors.blue,
-                    ],
-                    barWidth: 1,
-                    isStrokeCapRound: true,
-                    dotData: FlDotData(
-                      show: false,
-                    ),
-                    belowBarData: BelowBarData(
-                      show: false,
-                      colors: gradientColors.map((color) => color.withOpacity(0.3)).toList(),
-                    ),
+                  Text(head,
+                    style: Theme.of(context).textTheme.caption.copyWith(color: Colors.grey),
                   ),
                 ],
               ),
             ),
-          ),
+
+            AspectRatio(
+              aspectRatio: 1.70,
+              child: Container(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 18.0, left: 12.0, top: 20, bottom: 12),
+                  child: FlChart(
+                    chart: LineChart(
+                      LineChartData(
+                        lineTouchData: LineTouchData(
+                            getTouchedSpotIndicator: (List<TouchedSpot> spots) {
+                              return spots.map((spot) {
+                                return TouchedSpotIndicatorData(
+                                  const FlLine(color: Colors.orange, strokeWidth: 1),
+                                  const FlDotData(dotSize: 2, dotColor: Colors.orange),
+                                );
+                              }).toList();
+                            },
+                            touchTooltipData: TouchTooltipData(
+                                tooltipBgColor: Colors.blueAccent,
+                                getTooltipItems: (List<TouchedSpot> spots) {
+                                  return spots.map((spot) {
+                                    final flSpot = spot.spot;
+                                    return TooltipItem(
+                                      '${_entityList[maxX.toInt() - flSpot.x.toInt() - 1].collectTime.replaceAll(new RegExp(r'T'), ' ')} \n${flSpot.y} $unit',
+                                      const TextStyle(color: Colors.white),
+                                    );
+                                  }).toList();
+                                }
+                            )
+                        ),
+                        gridData: FlGridData(
+                          show: true,
+                          checkToShowVerticalGrid: (double value) {
+                            int v = value.toInt();
+                            int m = (maxY / 4.0).round();
+                            if(m <= 0)
+                              return true;
+                            else{
+                              if(v % m == 0)
+                                return true;
+                            }
+                            return false;
+                          },
+                        ),
+                        titlesData: FlTitlesData(
+                          show: true,
+                          bottomTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 22,
+                            textStyle: TextStyle(
+                                color: Colors.grey,
+                                fontWeight: FontWeight.normal,
+                                fontSize: 12
+                            ),
+                            getTitles: (value) {
+                              int v = value.toInt();
+                              int m = (maxX / 10.0).round();
+                              if(m <= 0)
+                                return '$v';
+                              else{
+                                if(v % m == 0)
+                                  return '$v';
+                              }
+                              return '';
+                            },
+                            margin: 8,
+                          ),
+                          leftTitles: SideTitles(
+                            showTitles: true,
+                            textStyle: TextStyle(
+                              color: Colors.grey,
+                              fontWeight: FontWeight.normal,
+                              fontSize: 12,
+                            ),
+                            getTitles: (value) {
+                              int v = value.toInt();
+                              int m = (maxY / 4.0).round();
+                              if(m <= 0)
+                                return '$v';
+                              else{
+                                if(v % m == 0)
+                                  return '$v';
+                              }
+                              return '';
+                            },
+                            reservedSize: 28,
+                            margin: 12,
+                          ),
+                        ),
+                        borderData: FlBorderData(
+                            show: true,
+                            border: Border(
+                              bottom: BorderSide(
+                                color: Colors.grey,
+                                width: 1,
+                              ),
+                              left: BorderSide(
+                                color: Colors.grey,
+                                width: 1,
+                              ),
+                              right: BorderSide(
+                                color: Colors.transparent,
+                              ),
+                              top: BorderSide(
+                                color: Colors.transparent,
+                              ),
+                            )
+                        ),
+                        minX: 0,
+                        maxX: maxX,
+                        minY: 0,
+                        maxY: maxY <= 1 ? 1 : (maxY + (maxY / 5.0)),
+                        lineBarsData: [
+                          LineChartBarData(
+                            spots: spotList,
+                            isCurved: false,
+                            colors: [
+                              Colors.blue,
+                            ],
+                            barWidth: 1,
+                            isStrokeCapRound: true,
+                            dotData: FlDotData(
+                              show: false,
+                            ),
+                            belowBarData: BelowBarData(
+                              show: false,
+                              colors: gradientColors.map((color) => color.withOpacity(0.3)).toList(),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-      ),
+      );
+    }
+
+    List<Widget> child(){
+      List<Widget> list = new List<Widget>();
+
+      if(_type == MonitorType.RD300S){
+        list.add(chart('空高(m)', 'm', _maxCount.toDouble(), _maxAirHeight, _airHeightSpot));
+        list.add(Divider());
+        list.add(chart('水位(m)', 'm', _maxCount.toDouble(), _maxWaterLevel, _waterLevelSpot));
+      }
+      else{
+        list.add(chart('流速(m/s)', 'm/s', _maxCount.toDouble(), _maxFlowVelocity, _flowVelocitySpot));
+        list.add(Divider());
+        list.add(chart('空高(m)', 'm', _maxCount.toDouble(), _maxAirHeight, _airHeightSpot));
+        list.add(Divider());
+        list.add(chart('水位(m)', 'm', _maxCount.toDouble(), _maxWaterLevel, _waterLevelSpot));
+        //list.add(Divider());
+        //list.add(chart('流速信号强度', ' ', _maxCount.toDouble(), _maxFlowVelSigIntens, _flowVelSigIntensSpot));
+        //list.add(Divider());
+        //list.add(chart('水位信号强度', ' ', _maxCount.toDouble(), _maxWatLevSigIntens, _watLevSigIntensSpot));
+      }
+      return list;
+    }
+
+    return Column(
+      children: child(),
     );
   }
 
@@ -283,6 +455,7 @@ class _DataTablePageStatus extends State<DataTablePage>{
           ),
         ),
         body: TabBarView(
+          physics: NeverScrollableScrollPhysics(), //禁止左右滑动切换页面
           children: <Widget>[
             SafeArea(
               top: false,
