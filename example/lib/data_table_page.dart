@@ -306,16 +306,16 @@ class _LineChartViewState extends State<LineChartView> {
       List<Widget> list = new List<Widget>();
 
       if(_type == MonitorType.RD300S){
-        list.add(chart('空高(m)', 'm', _maxCount.toDouble(), _maxAirHeight, _airHeightSpot));
+        list.add(chart('空高(m)', 'm', _airHeightSpot.length.toDouble(), _maxAirHeight, _airHeightSpot));
         list.add(Divider());
-        list.add(chart('水位(m)', 'm', _maxCount.toDouble(), _maxWaterLevel, _waterLevelSpot));
+        list.add(chart('水位(m)', 'm', _waterLevelSpot.length.toDouble(), _maxWaterLevel, _waterLevelSpot));
       }
       else{
-        list.add(chart('流速(m/s)', 'm/s', _maxCount.toDouble(), _maxFlowVelocity, _flowVelocitySpot));
+        list.add(chart('流速(m/s)', 'm/s', _flowVelocitySpot.length.toDouble(), _maxFlowVelocity, _flowVelocitySpot));
         list.add(Divider());
-        list.add(chart('空高(m)', 'm', _maxCount.toDouble(), _maxAirHeight, _airHeightSpot));
+        list.add(chart('空高(m)', 'm', _airHeightSpot.length.toDouble(), _maxAirHeight, _airHeightSpot));
         list.add(Divider());
-        list.add(chart('水位(m)', 'm', _maxCount.toDouble(), _maxWaterLevel, _waterLevelSpot));
+        list.add(chart('水位(m)', 'm', _waterLevelSpot.length.toDouble(), _maxWaterLevel, _waterLevelSpot));
         //list.add(Divider());
         //list.add(chart('流速信号强度', ' ', _maxCount.toDouble(), _maxFlowVelSigIntens, _flowVelSigIntensSpot));
         //list.add(Divider());

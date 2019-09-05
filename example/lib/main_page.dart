@@ -28,7 +28,7 @@ class DioData{
   }
   static monitorData(int id, callBack(t)) async{
     print('request:' + id.toString());
-    var response = await HttpHelper().request("Tools/DataHandler.ashx?action=getjsonvalue&SearName=rtu_id&SearValue=$id");
+    var response = await HttpHelper().request("Tools/DataHandler.ashx?action=getjsonvalue&SearName=rtu_id&SearValue=$id&n=60000");
     if(response != null){
       print(response.data);
       List<Entity> list = getEntityList(json.decode(response.data));
@@ -589,7 +589,7 @@ class _RtuDeviceCardState extends State<RtuDeviceCard>{
                     child: Icon(Icons.devices, color: Colors.blue,),
                   ),
                   Expanded(
-                    child: Text(int.parse(widget.data.monitPonitId).toString(),
+                    child: Text(int.parse(widget.data.rtuId).toString(),
                       style: Theme.of(context).textTheme.subhead.copyWith(color: Colors.black),
                     ),
                   ),

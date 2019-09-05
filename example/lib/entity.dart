@@ -16,9 +16,6 @@ class Entity extends Object {
   @JsonKey(name: 'id')
   int id;
 
-  @JsonKey(name: 'monit_ponit_id')
-  String monitPonitId;
-
   @JsonKey(name: 'rtu_id')
   String rtuId;
 
@@ -67,7 +64,7 @@ class Entity extends Object {
   @JsonKey(name: 'note')
   String note;
 
-  Entity(this.id,this.monitPonitId,this.rtuId,this.waterLevel,this.watLevSigIntens,this.flowVelocity,this.flowVelSigIntens,this.flowRateInstant,this.flowRateTotal,this.airHeight,this.equipTemp,this.rtuSigIntens,this.powerVol,this.collectTime,this.rainfallFiveMin,this.windSpeed,this.windOri,this.note,);
+  Entity(this.id,this.rtuId,this.waterLevel,this.watLevSigIntens,this.flowVelocity,this.flowVelSigIntens,this.flowRateInstant,this.flowRateTotal,this.airHeight,this.equipTemp,this.rtuSigIntens,this.powerVol,this.collectTime,this.rainfallFiveMin,this.windSpeed,this.windOri,this.note,);
 
   factory Entity.fromJson(Map<String, dynamic> srcJson) => _$EntityFromJson(srcJson);
 

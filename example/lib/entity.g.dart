@@ -9,7 +9,6 @@ part of 'entity.dart';
 Entity _$EntityFromJson(Map<String, dynamic> json) {
   return Entity(
       json['id'] as int,
-      json['monit_ponit_id'] as String,
       json['rtu_id'] as String,
       (json['water_level'] as num)?.toDouble(),
       (json['wat_lev_sig_intens'] as num)?.toDouble(),
@@ -30,7 +29,6 @@ Entity _$EntityFromJson(Map<String, dynamic> json) {
 
 Map<String, dynamic> _$EntityToJson(Entity instance) => <String, dynamic>{
       'id': instance.id,
-      'monit_ponit_id': instance.monitPonitId,
       'rtu_id': instance.rtuId,
       'water_level': instance.waterLevel,
       'wat_lev_sig_intens': instance.watLevSigIntens,
