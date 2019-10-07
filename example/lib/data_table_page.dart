@@ -10,7 +10,8 @@ class LineChartView extends StatefulWidget{
 
   LineChartView(MonitorType type, List<Entity> entityList){
     _type = type;
-    _entityList = entityList.reversed.toList();
+    //_entityList = entityList.reversed.toList();
+    _entityList = entityList;
   }
   _LineChartViewState createState() => _LineChartViewState();
 }
@@ -337,7 +338,8 @@ class DataSource extends DataTableSource{
 
   DataSource(MonitorType type, List<Entity> entityList){
     _type = type;
-    _entityList = entityList.reversed.toList();
+    //_entityList = entityList.reversed.toList();
+    _entityList = entityList;
   }
 
   List<DataCell> cells(Entity data){

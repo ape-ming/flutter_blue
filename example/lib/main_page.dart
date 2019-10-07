@@ -28,7 +28,7 @@ class DioData{
   }
   static monitorData(int id, callBack(t)) async{
     print('request:' + id.toString());
-    var response = await HttpHelper().request("Tools/DataHandler.ashx?action=getjsonvalue&SearName=rtu_id&SearValue=$id&n=60000");
+    var response = await HttpHelper().request("Tools/DataHandler.ashx?action=getjsonvalue&SearName=rtu_id&SearValue=$id&n=1000");
     if(response != null){
       print(response.data);
       List<Entity> list = getEntityList(json.decode(response.data));
@@ -149,7 +149,7 @@ class _AddDeviceState extends State<AddDevice>{
               ),
               //Text('已添加站地址'),
               SizedBox(
-                height: 200,
+                height: 150,
                 child: ListView(
                   children: deviceList.map((d){
                     return devices(d, (){
@@ -403,7 +403,7 @@ class _HomePageState extends State<HomePage>{
         //physics: BouncingScrollPhysics(),
         physics: AlwaysScrollableScrollPhysics(),
         children: monitorDataList.map((d){
-          return RtuDeviceCard(d.getLastEntity(),
+          return RtuDeviceCard(d.getFirstEntity(),
             onTap: (){
               Navigator.push(
                   context,
@@ -419,7 +419,7 @@ class _HomePageState extends State<HomePage>{
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
-        title: Text('RTU调试'),
+        title: Text('在线监测'),
         centerTitle: true,
         actions: <Widget>[
           PopupMenuButton<int>(

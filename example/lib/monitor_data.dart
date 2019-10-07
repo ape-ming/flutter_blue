@@ -11,12 +11,12 @@ enum MonitorType{
 class MonitorData{
   int _rtuId;
   MonitorType _type;
-  Entity _lastEntity;
+  Entity _firstEntity;
   List<Entity> _entityList = new List<Entity>();
 
   MonitorData(List<Entity> entityList){
     update(entityList);
-    _rtuId = int.parse(_lastEntity.rtuId);
+    _rtuId = int.parse(_firstEntity.rtuId);
     if(_rtuId.toString().startsWith('2')){
       _type = MonitorType.RD200;
     }
@@ -32,7 +32,7 @@ class MonitorData{
   }
 
   update(List<Entity> entityList){
-    _lastEntity = entityList[entityList.length - 1];
+    _firstEntity = entityList[0];
     _entityList.clear();
     _entityList.addAll(entityList);
   }
@@ -45,8 +45,8 @@ class MonitorData{
     return _type;
   }
 
-  Entity getLastEntity(){
-    return _lastEntity;
+  Entity getFirstEntity(){
+    return _firstEntity;
   }
 
   List<Entity> getEntityList(){
