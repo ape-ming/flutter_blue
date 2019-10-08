@@ -28,7 +28,7 @@ class DioData{
   }
   static monitorData(int id, callBack(t)) async{
     print('request:' + id.toString());
-    var response = await HttpHelper().request("Tools/DataHandler.ashx?action=getjsonvalue&SearName=rtu_id&SearValue=$id&n=1000");
+    var response = await HttpHelper().request("Tools/DataHandler.ashx?action=getjsonvalue&SearName=rtu_id&SearValue=$id&n=500");
     if(response != null){
       print(response.data);
       List<Entity> list = getEntityList(json.decode(response.data));
