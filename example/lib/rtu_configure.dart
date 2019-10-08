@@ -661,18 +661,16 @@ class _RtuConfigurePageState extends State<RtuConfigurePage>{
     if(services.length > 0){
         services.forEach((s){
           String uuid = '0x${s.uuid.toString().toUpperCase().substring(4, 8)}';
-          if(int.parse(uuid) == 0x01){
+          if(int.parse(uuid) == 0xfff0){
             service = s;
             characteristics = s.characteristics;
             characteristics.forEach((c){
               String character = '0x${c.uuid.toString().toUpperCase().substring(4, 8)}';
-              if(int.parse(character) == 0x02){
+              if(int.parse(character) == 0xfff6){
                 if(writeCharacter == null){
                   writeCharacter = c;
                   print('++++++++find writeCharacter');
                 }
-              }
-              else if(int.parse(character) == 0x03){
                 if(readCharacter == null){
                   readCharacter = c;
                   c.setNotifyValue(true);
