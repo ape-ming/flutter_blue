@@ -1,11 +1,9 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/material.dart' as prefix0;
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_blue_example/login_page.dart';
+import 'login_page.dart';
 
 import 'data_table_page.dart';
 import 'main.dart';
@@ -18,6 +16,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'monitor_data.dart';
 import 'rtu_ble_protocol.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'loading_page.dart';
 
 class DioData{
   static _filtration(Response response,callBack(t)){
@@ -46,20 +45,42 @@ class MainApp extends StatefulWidget{
 class _MainAppState extends State<MainApp>{
   final SystemUiOverlayStyle _style =
   SystemUiOverlayStyle(statusBarColor: Colors.transparent);
+  var _futureBuilderFuture;
 
-  bool login = false;
-
-  _getLoginStatus() async{
+  Future _getLoginStatus() async{
+    var status;
     var prefs = await SharedPreferences.getInstance();
-    login =  prefs.getBool('login');
+    status =  prefs.getBool('login');
+    print("_getLoginStatus:" + status.toString());
+    return status;
   }
 
-  Widget goHome(){
-    print('login status:' + login.toString());
-    if(login)
-      return new HomePage();
-    else
-      return new LoginPage();
+  @override
+  void initState() {
+    super.initState();
+    //用_futureBuilderFuture来保存_gerData()的结果，以避免不必要的ui重绘
+    _futureBuilderFuture = _getLoginStatus();
+  }
+
+  Widget _buildFuture(BuildContext context, AsyncSnapshot snapshot) {
+    switch (snapshot.connectionState) {
+      case ConnectionState.done:
+        print('snapshot.data:' + snapshot.data.toString());
+        if (snapshot.hasError) return Text('Error: ${snapshot.error}');
+        if(snapshot.data)
+          return HomePage();//_createListView(context, snapshot);
+        else
+          return LoginPage();
+        break;
+      default:
+        return new Center(
+          child: Stack(
+            children: <Widget>[
+
+            ],
+          ),
+        );
+    }
   }
 
   @override
@@ -69,7 +90,11 @@ class _MainAppState extends State<MainApp>{
 
       debugShowCheckedModeBanner: false,
       title: 'RTU调试',
-      home: goHome(),
+      /*home: FutureBuilder(
+        builder: _buildFuture,
+        future:  _futureBuilderFuture, // 用户定义的需要异步执行的代码，类型为Future<String>或者null的变量或函数
+      ),*/
+      home: LoadingPage(),
       localizationsDelegates: [
         //此处
         GlobalMaterialLocalizations.delegate,
@@ -243,30 +268,15 @@ class _HomePageState extends State<HomePage>{
     await prefs.setStringList('monitor_id', list);
   }
 
-  Future<bool> login;
-
-  Future<bool> _getLoginStatus() async{
-    var status;
-    var prefs = await SharedPreferences.getInstance();
-    status = prefs.getBool('login');
-    return status;
-  }
-
   _setLogoutStatus() async{
     var prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('login', true);
+    await prefs.setBool('login', false);
   }
 
   @override
   void initState() {
     super.initState();
     _getMonitorId();
-
-    login = _getLoginStatus();
-    login.then((bool login){
-      print('home page login status:' + login.toString());
-    });
-    print('home page login');
   }
 
   @override

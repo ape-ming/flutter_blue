@@ -6,8 +6,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_blue/flutter_blue.dart';
-import 'package:flutter_blue_example/login_page.dart';
+import 'login_page.dart';
 //import 'package:flutter_blue_example/widgets.dart';
+import 'utils.dart';
 import 'widgets.dart';
 import 'main_page.dart';
 import 'dart:developer';
@@ -15,19 +16,21 @@ import 'rtu_configure.dart';
 import 'dart:io';  //提供Platform接口
 import 'package:flutter/services.dart'; //提供SystemUiOverlayStyle
 
+void realRunApp() async {
+  bool success = await Utils.getInstance();
+  print("init-"+success.toString());
+  runApp(MainApp());
+}
+
 void main() {
   //runApp(FlutterBlueApp());
   runApp(MainApp());
+
   if(Platform.isAndroid) {
-
     SystemUiOverlayStyle systemUiOverlayStyle =
-
     SystemUiOverlayStyle(statusBarColor: Colors.transparent);
-
     SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
-
   }
-
 }
 
 class FlutterBlueApp extends StatefulWidget {

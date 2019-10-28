@@ -1,7 +1,7 @@
 
 
 import 'package:flutter/material.dart';
-import 'package:flutter_blue_example/main_page.dart';
+import 'main_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget{
@@ -15,9 +15,6 @@ class _LoginPageState extends State<LoginPage>{
   TextEditingController _pwdController = new TextEditingController();
   FocusNode _nameFocusNode = new FocusNode();
   FocusNode _pwdFocusNode  = new FocusNode();
-
-  String _userName;
-  String _password;
 
   void showInSnackBar(String value) {
     _scaffoldKey.currentState.showSnackBar(SnackBar(
