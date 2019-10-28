@@ -5,6 +5,7 @@ import 'package:flutter/material.dart' as prefix0;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_blue_example/login_page.dart';
 
 import 'data_table_page.dart';
 import 'main.dart';
@@ -46,6 +47,21 @@ class _MainAppState extends State<MainApp>{
   final SystemUiOverlayStyle _style =
   SystemUiOverlayStyle(statusBarColor: Colors.transparent);
 
+  bool login = false;
+
+  _getLoginStatus() async{
+    var prefs = await SharedPreferences.getInstance();
+    login =  prefs.getBool('login');
+  }
+
+  Widget goHome(){
+    print('login status:' + login.toString());
+    if(login)
+      return new HomePage();
+    else
+      return new LoginPage();
+  }
+
   @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(_style);
@@ -53,7 +69,7 @@ class _MainAppState extends State<MainApp>{
 
       debugShowCheckedModeBanner: false,
       title: 'RTU调试',
-      home: new HomePage(),
+      home: goHome(),
       localizationsDelegates: [
         //此处
         GlobalMaterialLocalizations.delegate,
@@ -183,6 +199,7 @@ class _HomePageState extends State<HomePage>{
   static const int _addDevice = 1;
   static const int _rtuDebug  = 2;
   static const int _ttDebug   = 3;
+  static const int _logout    = 4;
   List<int> monitorId = new List<int>();
   List<Entity> _entityList;
   List<MonitorData> monitorDataList = new List<MonitorData>();
@@ -226,10 +243,30 @@ class _HomePageState extends State<HomePage>{
     await prefs.setStringList('monitor_id', list);
   }
 
+  Future<bool> login;
+
+  Future<bool> _getLoginStatus() async{
+    var status;
+    var prefs = await SharedPreferences.getInstance();
+    status = prefs.getBool('login');
+    return status;
+  }
+
+  _setLogoutStatus() async{
+    var prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('login', true);
+  }
+
   @override
   void initState() {
     super.initState();
     _getMonitorId();
+
+    login = _getLoginStatus();
+    login.then((bool login){
+      print('home page login status:' + login.toString());
+    });
+    print('home page login');
   }
 
   @override
@@ -296,6 +333,35 @@ class _HomePageState extends State<HomePage>{
       //    context,
        //   new MaterialPageRoute(builder: (context) => RtuConfigurePage())
       //);
+    }
+    else if(value == _logout){
+      // 弹出对话框
+      showDialog<bool>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text("提示"),
+            content: Text("您确定要退出当前登录吗?"),
+            actions: <Widget>[
+              FlatButton(
+                child: Text("取消"),
+                onPressed: () => Navigator.of(context).pop(), // 关闭对话框
+              ),
+              FlatButton(
+                child: Text("确定"),
+                onPressed: () {
+                  //关闭对话框并返回true
+                  //Navigator.of(context).pop(true);
+                  _setLogoutStatus();
+                  Navigator.of(context).pushAndRemoveUntil(
+                      new MaterialPageRoute(builder: (context) => new LoginPage()),
+                          (route) => route == null);
+                },
+              ),
+            ],
+          );
+        },
+      );
     }
   }
 
@@ -439,6 +505,14 @@ class _HomePageState extends State<HomePage>{
                   leading: Icon(Icons.settings),
                   title: Text('RTU配置'),
                 ),
+              ),
+              PopupMenuItem<int>(
+                value: _logout,
+                child: Center(
+                  child: Text('退出登录',
+                    style: Theme.of(context).textTheme.subhead.copyWith(color: Colors.red),
+                  ),
+                )
               ),
             ],
           ),
