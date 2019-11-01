@@ -45,42 +45,10 @@ class MainApp extends StatefulWidget{
 class _MainAppState extends State<MainApp>{
   final SystemUiOverlayStyle _style =
   SystemUiOverlayStyle(statusBarColor: Colors.transparent);
-  var _futureBuilderFuture;
-
-  Future _getLoginStatus() async{
-    var status;
-    var prefs = await SharedPreferences.getInstance();
-    status =  prefs.getBool('login');
-    print("_getLoginStatus:" + status.toString());
-    return status;
-  }
 
   @override
   void initState() {
     super.initState();
-    //用_futureBuilderFuture来保存_gerData()的结果，以避免不必要的ui重绘
-    _futureBuilderFuture = _getLoginStatus();
-  }
-
-  Widget _buildFuture(BuildContext context, AsyncSnapshot snapshot) {
-    switch (snapshot.connectionState) {
-      case ConnectionState.done:
-        print('snapshot.data:' + snapshot.data.toString());
-        if (snapshot.hasError) return Text('Error: ${snapshot.error}');
-        if(snapshot.data)
-          return HomePage();//_createListView(context, snapshot);
-        else
-          return LoginPage();
-        break;
-      default:
-        return new Center(
-          child: Stack(
-            children: <Widget>[
-
-            ],
-          ),
-        );
-    }
   }
 
   @override
@@ -213,6 +181,10 @@ class _AddDeviceState extends State<AddDevice>{
 }
 
 class HomePage extends StatefulWidget{
+  final String userName;
+  final String password;
+
+  HomePage(this.userName, this.password);
 
   _HomePageState createState() => _HomePageState();
 }
@@ -276,6 +248,12 @@ class _HomePageState extends State<HomePage>{
   @override
   void initState() {
     super.initState();
+
+    if(widget.userName != null && widget.password != null){
+      print("user name:" + widget.userName);
+      print("password:" + widget.password);
+    }
+
     _getMonitorId();
   }
 
@@ -492,6 +470,47 @@ class _HomePageState extends State<HomePage>{
       );
     }
 
+    Widget _buildIcon(){
+      if(widget.userName == 'root'){
+        return Icon(Icons.add);
+      }
+      else{
+        return Icon(Icons.more_vert);
+      }
+    }
+
+    List<PopupMenuItem<int>> _buildItems(BuildContext context)
+    {
+      List<PopupMenuItem<int>> list = new List<PopupMenuItem<int>>();
+      if(widget.userName == 'root'){
+        list.add(const PopupMenuItem<int>(
+          value: _addDevice,
+          child: ListTile(
+            leading: Icon(Icons.add_to_queue),
+            title: Text('添加设备'),
+          ),
+        ));
+        list.add(const PopupMenuItem<int>(
+          value: _rtuDebug,
+          child: ListTile(
+            leading: Icon(Icons.settings),
+            title: Text('RTU配置'),
+          ),
+        ));
+      }
+
+      list.add(PopupMenuItem<int>(
+          value: _logout,
+          child: Center(
+            child: Text('退出登录',
+              style: Theme.of(context).textTheme.subhead.copyWith(color: Colors.red),
+            ),
+          )
+      ));
+
+      return list;
+    }
+
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
@@ -499,32 +518,9 @@ class _HomePageState extends State<HomePage>{
         centerTitle: true,
         actions: <Widget>[
           PopupMenuButton<int>(
-            icon: Icon(Icons.add),
+            icon: _buildIcon(),
             onSelected: showMenuSelection,
-            itemBuilder: (BuildContext context) => <PopupMenuItem<int>>[
-              const PopupMenuItem<int>(
-                value: _addDevice,
-                child: ListTile(
-                  leading: Icon(Icons.add_to_queue),
-                  title: Text('添加设备'),
-                ),
-              ),
-              const PopupMenuItem<int>(
-                value: _rtuDebug,
-                child: ListTile(
-                  leading: Icon(Icons.settings),
-                  title: Text('RTU配置'),
-                ),
-              ),
-              PopupMenuItem<int>(
-                value: _logout,
-                child: Center(
-                  child: Text('退出登录',
-                    style: Theme.of(context).textTheme.subhead.copyWith(color: Colors.red),
-                  ),
-                )
-              ),
-            ],
+            itemBuilder: (BuildContext context) => _buildItems(context),
           ),
         ],
 

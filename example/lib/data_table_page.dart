@@ -19,7 +19,7 @@ class LineChartView extends StatefulWidget{
 class _LineChartViewState extends State<LineChartView> {
   List<Entity> _entityList;
   MonitorType _type;
-  final int _maxCount = 100;
+  final int _maxCount = 300;
 
   List<FlSpot> _airHeightSpot;
   List<FlSpot> _waterLevelSpot;

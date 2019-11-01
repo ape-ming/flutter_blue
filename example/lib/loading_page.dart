@@ -9,10 +9,17 @@ class LoadingPage extends StatefulWidget{
 
 class _LoadingPageState extends State<LoadingPage>{
 
+  String userName;
+  String password;
+
   Future<bool> _getLoginStatus() async{
     var status;
     var prefs = await SharedPreferences.getInstance();
+
+    userName = prefs.getString('user_name');
+    password = prefs.getString('password');
     status =  prefs.getBool('login');
+
     print("_getLoginStatus:" + status.toString());
     return status;
   }
@@ -22,14 +29,16 @@ class _LoadingPageState extends State<LoadingPage>{
     super.initState();
 
     _getLoginStatus().then((result){
-      if(result){
-        Navigator.of(context).pushAndRemoveUntil(
-            new MaterialPageRoute(builder: (context) => new HomePage()),
-                (route) => route == null);
-      }
-      else{
+      if(!result || (userName == null) || (password == null)){
         Navigator.of(context).pushAndRemoveUntil(
             new MaterialPageRoute(builder: (context) => new LoginPage()),
+                (route) => route == null);
+
+      }
+      else{
+        //重新通过服务器验证账号名和密码是否正确
+        Navigator.of(context).pushAndRemoveUntil(
+            new MaterialPageRoute(builder: (context) => new HomePage(userName, password)),
                 (route) => route == null);
       }
     });

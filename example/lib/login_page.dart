@@ -95,9 +95,11 @@ class _LoginPageState extends State<LoginPage>{
     );
   }
 
-  _setLoginStatus() async{
+  _setLoginStatus(String userName, String password) async{
     var prefs = await SharedPreferences.getInstance();
     await prefs.setBool('login', true);
+    await prefs.setString('user_name', userName);
+    await prefs.setString('password', password);
   }
 
   @override
@@ -126,11 +128,12 @@ class _LoginPageState extends State<LoginPage>{
                     print('user_name:' + _nameController.text);
                     print('password:' + _pwdController.text);
 
-                    if(('root' == _nameController.text) && ('12345678' == _pwdController.text)){
+                    if((('root' == _nameController.text) && ('12345678' == _pwdController.text)) ||
+                        (('chengxinda' == _nameController.text) && ('chengxinda' == _pwdController.text))){
                       //showInSnackBar('登录成功');
-                      _setLoginStatus();
+                      _setLoginStatus(_nameController.text, _pwdController.text);
                       Navigator.of(context).pushAndRemoveUntil(
-                          new MaterialPageRoute(builder: (context) => new HomePage()),
+                          new MaterialPageRoute(builder: (context) => new HomePage(_nameController.text, _pwdController.text)),
                               (route) => route == null);
                     }
                     else{
