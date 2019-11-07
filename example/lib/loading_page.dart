@@ -11,6 +11,7 @@ class _LoadingPageState extends State<LoadingPage>{
 
   String userName;
   String password;
+  int role;
 
   Future<bool> _getLoginStatus() async{
     var status;
@@ -18,6 +19,7 @@ class _LoadingPageState extends State<LoadingPage>{
 
     userName = prefs.getString('user_name');
     password = prefs.getString('password');
+    role = prefs.getInt('role');
     status =  prefs.getBool('login');
 
     print("_getLoginStatus:" + status.toString());
@@ -29,7 +31,7 @@ class _LoadingPageState extends State<LoadingPage>{
     super.initState();
 
     _getLoginStatus().then((result){
-      if(!result || (userName == null) || (password == null)){
+      if((result == null) || !result || (userName == null) || (password == null)){
         Navigator.of(context).pushAndRemoveUntil(
             new MaterialPageRoute(builder: (context) => new LoginPage()),
                 (route) => route == null);
@@ -38,7 +40,7 @@ class _LoadingPageState extends State<LoadingPage>{
       else{
         //重新通过服务器验证账号名和密码是否正确
         Navigator.of(context).pushAndRemoveUntil(
-            new MaterialPageRoute(builder: (context) => new HomePage(userName, password)),
+            new MaterialPageRoute(builder: (context) => new HomePage(userName, password, role)),
                 (route) => route == null);
       }
     });

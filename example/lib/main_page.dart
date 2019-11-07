@@ -26,9 +26,11 @@ class DioData{
       callBack(null);
     }
   }
-  static monitorData(int id, callBack(t)) async{
+  //app_server/GetJsonValue?username=$name&password=$password&SearName=rtu_id&SearValue=$id&n=20
+  static monitorData(int id, String name, String password, int count, callBack(t)) async{
     print('request:' + id.toString());
-    var response = await HttpHelper().request("Tools/DataHandler.ashx?action=getjsonvalue&SearName=rtu_id&SearValue=$id&n=500");
+    //var response = await HttpHelper().request("Tools/DataHandler.ashx?action=getjsonvalue&SearName=rtu_id&SearValue=$id&n=500");
+    var response = await HttpHelper().request("GetJsonValue?username=$name&password=$password&SearName=rtu_id&SearValue=$id&n=$count");
     if(response != null){
       print(response.data);
       List<Entity> list = getEntityList(json.decode(response.data));
@@ -183,8 +185,9 @@ class _AddDeviceState extends State<AddDevice>{
 class HomePage extends StatefulWidget{
   final String userName;
   final String password;
+  final int role;
 
-  HomePage(this.userName, this.password);
+  HomePage(this.userName, this.password, this.role);
 
   _HomePageState createState() => _HomePageState();
 }
@@ -192,6 +195,11 @@ class HomePage extends StatefulWidget{
 class _HomePageState extends State<HomePage>{
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
+
+  static const int _maxCount  = 500;
+
+  static const int _roleAdmin = 1;
+  static const int _roleUser  = 2;
 
   static const int _addDevice = 1;
   static const int _rtuDebug  = 2;
@@ -201,7 +209,7 @@ class _HomePageState extends State<HomePage>{
   List<Entity> _entityList;
   List<MonitorData> monitorDataList = new List<MonitorData>();
 
-  _getMonitorId() async{
+  _getMonitorIdLocal() async{
     List<String> list;
 
     var prefs = await SharedPreferences.getInstance();
@@ -220,7 +228,48 @@ class _HomePageState extends State<HomePage>{
       }
     });
 
-    _handleRefresh();
+    //_handleRefresh();
+    _getStationData(_maxCount);
+  }
+
+
+  _stationRequest(String name, String password, callBack(t)) async{
+    var response = await HttpHelper().request("GetStationServlet?username=$name&password=$password");
+    if(response != null){
+      callBack(response.data);
+    }else{
+      //showInSnackBar('网络连接失败，请检查网络连接！');
+    }
+  }
+
+  Future<void> _getMonitorIdRemote(String name, String password) async {
+    await _stationRequest(name, password, (t) {
+
+      Map<String, dynamic> user = json.decode(t);
+
+      if(user.containsKey('isExist')){
+        if(user['isExist']){
+          List<dynamic> stations = user['stations'];
+          setState(() {
+            monitorId.clear();
+            if((stations != null) && stations.isNotEmpty){
+              stations.forEach((f){
+                monitorId.add(int.parse(f));
+              });
+            }
+            if(monitorDataList.isNotEmpty){
+              for(int i = 0; i < monitorDataList.length; i++){
+                int id = monitorDataList.elementAt(i).getRtuId();
+                if(!stations.contains(id.toString())){
+                  monitorDataList.removeAt(i);
+                }
+              }
+            }
+          });
+        }
+      }
+      //showInSnackBar('用户名或密码错误！');
+    });
   }
 
   _setMonitorId() async{
@@ -252,9 +301,16 @@ class _HomePageState extends State<HomePage>{
     if(widget.userName != null && widget.password != null){
       print("user name:" + widget.userName);
       print("password:" + widget.password);
+      print('role:' + widget.role.toString());
     }
 
-    _getMonitorId();
+    if(widget.role == _roleAdmin){
+      _getMonitorIdLocal();
+    }else if(widget.role == _roleUser){
+      _getMonitorIdRemote(widget.userName, widget.password).then((_){
+        _getStationData(_maxCount);
+      });
+    }
   }
 
   @override
@@ -379,18 +435,10 @@ class _HomePageState extends State<HomePage>{
     print('monitorDataList len:' + monitorDataList.length.toString());
   }
 
-  Future<void> _getData(int id) async {
-    await DioData.monitorData(id, (t) {
+  Future<void> _getData(int id, int count) async {
+    await DioData.monitorData(id, widget.userName, widget.password, count, (t) {
       _entityList = t;
-      //print(_entityList[_entityList.length - 1].id.toString());
     });
-
-    if(_entityList != null){
-      print('getData OK');
-    }
-    else{
-      print('getData timeout');
-    }
 
     if(_entityList != null){
       //刷新界面
@@ -402,17 +450,28 @@ class _HomePageState extends State<HomePage>{
     }
   }
 
-  Future<void> _handleRefresh() async{
-    final Completer<Null> completer = new Completer<Null>();
-
+   _getStationData(int count) async{
     if(monitorId.isNotEmpty && monitorId.length > 0){
       for(int i = 0; i < monitorId.length; i++){
-        await _getData(monitorId[i]);
+        print("monitorId:" + monitorId[i].toString());
+        await _getData(monitorId[i], count);
       }
     }
+  }
 
+  Future<void> _handleManualRefresh() async{
+    final Completer<Null> completer = new Completer<Null>();
+
+    if(widget.role == _roleAdmin){
+      //await _getStationData(2);
+      await _getStationData(_maxCount);
+    }else if(widget.role == _roleUser){
+      await _getMonitorIdRemote(widget.userName, widget.password);
+      await _getStationData(_maxCount);
+    }
+
+    //await Future.delayed(Duration(seconds: 3), (){});
     completer?.complete();
-
     return completer.future;
   }
 
@@ -471,7 +530,7 @@ class _HomePageState extends State<HomePage>{
     }
 
     Widget _buildIcon(){
-      if(widget.userName == 'root'){
+      if(widget.role == _roleAdmin){
         return Icon(Icons.add);
       }
       else{
@@ -482,7 +541,7 @@ class _HomePageState extends State<HomePage>{
     List<PopupMenuItem<int>> _buildItems(BuildContext context)
     {
       List<PopupMenuItem<int>> list = new List<PopupMenuItem<int>>();
-      if(widget.userName == 'root'){
+      if(widget.role == _roleAdmin){
         list.add(const PopupMenuItem<int>(
           value: _addDevice,
           child: ListTile(
@@ -547,7 +606,7 @@ class _HomePageState extends State<HomePage>{
       ),
       body: RefreshIndicator(
         key: _refreshIndicatorKey,
-        onRefresh: _handleRefresh,
+        onRefresh: _handleManualRefresh,
         child: Padding(
           padding: EdgeInsets.only(top: 10.0, bottom: 20.0),
           child: body,

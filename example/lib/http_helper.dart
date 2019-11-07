@@ -6,7 +6,7 @@ import 'package:path_provider/path_provider.dart';
 class HttpHelper {
   static const GET = "GET";
   static const POST = "POST";
-  static const baseUrl = "http://47.106.10.50:82/";
+  static const baseUrl = "http://47.106.10.50:8888/app_server/";
   static Dio _dio;
   PersistCookieJar _cookieJar;///Cookie持久化
   HttpHelper._instance() {
