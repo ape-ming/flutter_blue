@@ -26,12 +26,14 @@ class _LineChartViewState extends State<LineChartView> {
   List<FlSpot> _flowVelocitySpot;
   List<FlSpot> _flowVelSigIntensSpot;
   List<FlSpot> _watLevSigIntensSpot;
+  List<FlSpot> _flowRateInstantSpot;
 
   double _maxAirHeight = 0;
   double _maxWaterLevel = 0;
   double _maxFlowVelocity = 0;
   double _maxFlowVelSigIntens = 0;
   double _maxWatLevSigIntens = 0;
+  double _maxFlowRateInstens = 0;
 
   void initState() {
     super.initState();
@@ -41,8 +43,9 @@ class _LineChartViewState extends State<LineChartView> {
     _airHeightSpot = airHeightSpot();
     _waterLevelSpot = waterLevelSpot();
     _flowVelocitySpot = flowVelocitySpot();
-    _flowVelSigIntensSpot = flowVelSigIntensSpot();
-    _watLevSigIntensSpot = watLevSigIntensSpot();
+    //_flowVelSigIntensSpot = flowVelSigIntensSpot();
+    //_watLevSigIntensSpot = watLevSigIntensSpot();
+    _flowRateInstantSpot = flowRateInstantSpotSpot();
   }
 
   List<FlSpot> airHeightSpot(){
@@ -120,6 +123,24 @@ class _LineChartViewState extends State<LineChartView> {
     return spots;
   }
 
+
+
+  List<FlSpot> flowRateInstantSpotSpot(){
+    List<FlSpot> spots = new List<FlSpot>();
+
+    if(_entityList.isNotEmpty && _entityList.length > 0){
+      int length = _maxCount > _entityList.length ? _entityList.length : _maxCount;
+      for(int i = 0; i < length; i++){
+        double data = _entityList[length - i - 1].flowRateInstant < 0 ? 0 : _entityList[length - i - 1].flowRateInstant;
+        spots.add(FlSpot(i.toDouble(), data));
+        if(data > _maxFlowRateInstens)
+          _maxFlowRateInstens = data;
+      }
+    }
+    return spots;
+  }
+
+
   @override
   Widget build(BuildContext context) {
     List<Color> gradientColors = [
@@ -171,6 +192,7 @@ class _LineChartViewState extends State<LineChartView> {
                     chart: LineChart(
                       LineChartData(
                         lineTouchData: LineTouchData(
+                          enabled: true,
                             getTouchedSpotIndicator: (List<TouchedSpot> spots) {
                               return spots.map((spot) {
                                 return TouchedSpotIndicatorData(
@@ -314,13 +336,16 @@ class _LineChartViewState extends State<LineChartView> {
       else{
         list.add(chart('流速(m/s)', 'm/s', _flowVelocitySpot.length.toDouble(), _maxFlowVelocity, _flowVelocitySpot));
         list.add(Divider());
-        list.add(chart('空高(m)', 'm', _airHeightSpot.length.toDouble(), _maxAirHeight, _airHeightSpot));
-        list.add(Divider());
+        //list.add(chart('空高(m)', 'm', _airHeightSpot.length.toDouble(), _maxAirHeight, _airHeightSpot));
+        //list.add(Divider());
         list.add(chart('水位(m)', 'm', _waterLevelSpot.length.toDouble(), _maxWaterLevel, _waterLevelSpot));
         //list.add(Divider());
         //list.add(chart('流速信号强度', ' ', _maxCount.toDouble(), _maxFlowVelSigIntens, _flowVelSigIntensSpot));
         //list.add(Divider());
         //list.add(chart('水位信号强度', ' ', _maxCount.toDouble(), _maxWatLevSigIntens, _watLevSigIntensSpot));
+        list.add(Divider());
+        list.add(chart('瞬时流量', 'm³/s', _flowRateInstantSpot.length.toDouble(), _maxFlowRateInstens, _flowRateInstantSpot));
+
       }
       return list;
     }
